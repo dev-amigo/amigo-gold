@@ -1,6 +1,6 @@
 "splash.title" = "Amigo Gold";
-"landing.title" = "Trade tokenized gold with Privy-grade security";
-"landing.subtitle" = "Access your crypto gold vault with seamless custody and privacy focused onboarding.";
+"landing.title" = "Trade digitized gold with Privy-grade security";
+"landing.subtitle" = "Hold modern gold, backed by crypto, with privacy-preserving custody.";
 "landing.cta" = "Login with Privy";
 "landing.cta.loading" = "Opening Privy...";
 "landing.alert.success.title" = "Logged in";

@@ -31,8 +31,8 @@ struct ThemePalette {
 }
 
 struct ThemeTypography {
-    let title: Font = .system(.title, weight: .semibold, design: .rounded)
-    let subtitle: Font = .system(.body, weight: .regular, design: .rounded)
-    let button: Font = .system(.headline, weight: .semibold, design: .rounded)
-    let badge: Font = .system(.caption, weight: .medium, design: .rounded)
+    let title: Font = .system(size: 28, weight: .semibold, design: .rounded)
+    let subtitle: Font = .system(size: 18, weight: .regular, design: .rounded)
+    let button: Font = .system(size: 17, weight: .semibold, design: .rounded)
+    let badge: Font = .system(size: 13, weight: .medium, design: .rounded)
 }

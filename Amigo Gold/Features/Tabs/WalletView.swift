@@ -17,7 +17,7 @@ struct WalletView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(holding.symbol)
-                                    .font(.system(.title3, weight: .semibold, design: .rounded))
+                                    .font(.system(size: 22, weight: .semibold, design: .rounded))
                                 Text(holding.name)
                                     .font(.footnote)
                                     .foregroundStyle(themeManager.palette.subdued)
@@ -25,7 +25,7 @@ struct WalletView: View {
                             Spacer()
                             VStack(alignment: .trailing, spacing: 6) {
                                 Text(holding.value)
-                                    .font(.system(.title3, weight: .semibold, design: .rounded))
+                                    .font(.system(size: 22, weight: .semibold, design: .rounded))
                                 Text(holding.allocation)
                                     .font(.footnote)
                                     .foregroundStyle(themeManager.palette.subdued)
@@ -44,7 +44,7 @@ struct WalletView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Custodied via Privy")
-                    .font(.system(.caption, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .background(themeManager.palette.foreground.opacity(0.1))

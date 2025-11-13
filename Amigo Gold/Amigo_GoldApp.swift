@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 
+@available(iOS 17.0, *)
 @main
 struct Amigo_GoldApp: App {
     @StateObject private var themeManager = ThemeManager()

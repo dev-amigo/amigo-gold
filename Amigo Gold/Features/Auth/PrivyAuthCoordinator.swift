@@ -1,5 +1,6 @@
 import Foundation
-import Privy
+import Combine
+import PrivySDK
 
 enum PrivyAuthError: Error {
     case notConfigured

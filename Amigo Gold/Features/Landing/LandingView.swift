@@ -26,7 +26,15 @@ struct LandingView: View {
 
             AGSurfaceCard {
                 VStack(spacing: 20) {
-                    AGIconStack(systemName: "lock.shield")
+                    Image(systemName: "shield.checkerboard.rotation")
+                        .symbolVariant(.fill)
+                        .font(.system(size: 58, weight: .regular, design: .rounded))
+                        .foregroundStyle(themeManager.palette.foreground)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                                .fill(themeManager.palette.surfaceSecondary)
+                        )
                     VStack(spacing: 12) {
                         Text(L10n.text(.landingTitle))
                             .font(themeManager.typography.title)

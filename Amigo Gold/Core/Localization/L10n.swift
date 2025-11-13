@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 enum L10n {
     static func text(_ key: Key) -> LocalizedStringKey {

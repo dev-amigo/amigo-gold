@@ -46,7 +46,6 @@ struct SearchSidebarView: View {
                 )
                 .shadow(color: .black.opacity(0.3), radius: 30, y: 20)
         )
-        .glassBackgroundEffect(in: RoundedRectangle(cornerRadius: 32, style: .continuous))
     }
 
     private var header: some View {

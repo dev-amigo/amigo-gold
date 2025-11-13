@@ -25,24 +25,24 @@ struct DashboardView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Welcome back")
-                .font(.system(.title3, weight: .medium, design: .rounded))
+                .font(.system(size: 20, weight: .medium, design: .rounded))
                 .foregroundStyle(themeManager.palette.subdued)
             Text("Your Gold Strategy")
-                .font(.system(.largeTitle, weight: .bold, design: .rounded))
+                .font(.system(size: 34, weight: .bold, design: .rounded))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var highlightGrid: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 16)], spacing: 16) {
-            ForEach(highlights) { highlight in
+            ForEach(highlights, id: \.id) { highlight in
                 GlassCard {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(highlight.title.uppercased())
                             .font(.caption)
                             .foregroundStyle(themeManager.palette.subdued)
                         Text(highlight.value)
-                            .font(.system(.title2, weight: .semibold, design: .rounded))
+                            .font(.system(size: 24, weight: .semibold, design: .rounded))
                         Text(highlight.trend)
                             .font(.footnote)
                             .foregroundStyle(highlight.trend.hasPrefix("+") ? .green : .red)
@@ -73,11 +73,11 @@ private struct ActivityTimelineView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Activity")
-                    .font(.system(.title3, weight: .semibold, design: .rounded))
-                ForEach(activities) { activity in
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                ForEach(activities, id: \.id) { activity in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(activity.title)
-                            .font(.system(.body, weight: .semibold, design: .rounded))
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
                         Text(activity.subtitle)
                             .font(.footnote)
                             .foregroundStyle(themeManager.palette.subdued)
