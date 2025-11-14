@@ -1,6 +1,6 @@
 //
 //  Amigo_GoldUITestsLaunchTests.swift
-//  Amigo GoldUITests
+// PerFolioUITests
 //
 //  Created by Tirupati Balan on 12/11/25.
 //

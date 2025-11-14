@@ -29,28 +29,28 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		18F3E1F8B1684BBEB5A5DF41 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = "Amigo Gold/Resources/Localization/Base.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		2CD06615193545B5AB62FA17 /* Dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Dev.xcconfig; path = "Amigo Gold/Configurations/Dev.xcconfig"; sourceTree = "<group>"; };
-		2EDB9B96681645C6BE7B00E1 /* Prod.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Prod.xcconfig; path = "Amigo Gold/Configurations/Prod.xcconfig"; sourceTree = "<group>"; };
-		D5D384412EC489E600956DF2 /* Amigo Gold.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Amigo Gold.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D5D384502EC489E800956DF2 /* Amigo GoldTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Amigo GoldTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		D5D3845A2EC489E800956DF2 /* Amigo GoldUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Amigo GoldUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		18F3E1F8B1684BBEB5A5DF41 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = "PerFolio/Resources/Localization/Base.lproj/Localizable.strings"; sourceTree = "<group>"; };
+		2CD06615193545B5AB62FA17 /* Dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Dev.xcconfig; path = "PerFolio/Configurations/Dev.xcconfig"; sourceTree = "<group>"; };
+		2EDB9B96681645C6BE7B00E1 /* Prod.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Prod.xcconfig; path = "PerFolio/Configurations/Prod.xcconfig"; sourceTree = "<group>"; };
+		D5D384412EC489E600956DF2 /* PerFolio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PerFolio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5D384502EC489E800956DF2 /* PerFolioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerFolioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5D3845A2EC489E800956DF2 /* PerFolioUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerFolioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		D5D384432EC489E600956DF2 /* Amigo Gold */ = {
+		D5D384432EC489E600956DF2 /* PerFolio */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Amigo Gold";
+			path = PerFolio;
 			sourceTree = "<group>";
 		};
-		D5D384532EC489E800956DF2 /* Amigo GoldTests */ = {
+		D5D384532EC489E800956DF2 /* PerfolioTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Amigo GoldTests";
+			path = PerfolioTests;
 			sourceTree = "<group>";
 		};
-		D5D3845D2EC489E800956DF2 /* Amigo GoldUITests */ = {
+		D5D3845D2EC489E800956DF2 /* PerfolioUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Amigo GoldUITests";
+			path = PerfolioUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -93,9 +93,9 @@
 		D5D384382EC489E600956DF2 = {
 			isa = PBXGroup;
 			children = (
-				D5D384432EC489E600956DF2 /* Amigo Gold */,
-				D5D384532EC489E800956DF2 /* Amigo GoldTests */,
-				D5D3845D2EC489E800956DF2 /* Amigo GoldUITests */,
+				D5D384432EC489E600956DF2 /* PerFolio */,
+				D5D384532EC489E800956DF2 /* PerfolioTests */,
+				D5D3845D2EC489E800956DF2 /* PerfolioUITests */,
 				D5D384422EC489E600956DF2 /* Products */,
 				D58EBAA52EC4AC2700BC3101 /* Recovered References */,
 				F0E6EDC2AF6D4E329AA7D838 /* Localizable.strings */,
@@ -105,9 +105,9 @@
 		D5D384422EC489E600956DF2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D5D384412EC489E600956DF2 /* Amigo Gold.app */,
-				D5D384502EC489E800956DF2 /* Amigo GoldTests.xctest */,
-				D5D3845A2EC489E800956DF2 /* Amigo GoldUITests.xctest */,
+				D5D384412EC489E600956DF2 /* PerFolio.app */,
+				D5D384502EC489E800956DF2 /* PerFolioTests.xctest */,
+				D5D3845A2EC489E800956DF2 /* PerFolioUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -115,9 +115,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D5D384402EC489E600956DF2 /* Amigo Gold */ = {
+		D5D384402EC489E600956DF2 /* PerFolio */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D5D384642EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo Gold" */;
+			buildConfigurationList = D5D384642EC489E800956DF2 /* Build configuration list for PBXNativeTarget "PerFolio" */;
 			buildPhases = (
 				D5D3843D2EC489E600956DF2 /* Sources */,
 				D5D3843E2EC489E600956DF2 /* Frameworks */,
@@ -128,19 +128,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				D5D384432EC489E600956DF2 /* Amigo Gold */,
+				D5D384432EC489E600956DF2 /* PerFolio */,
 			);
-			name = "Amigo Gold";
+			name = PerFolio;
 			packageProductDependencies = (
 				2C9B3DFB1F5443F0AE14FC26 /* Privy */,
 			);
 			productName = "Amigo Gold";
-			productReference = D5D384412EC489E600956DF2 /* Amigo Gold.app */;
+			productReference = D5D384412EC489E600956DF2 /* PerFolio.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D5D3844F2EC489E800956DF2 /* Amigo GoldTests */ = {
+		D5D3844F2EC489E800956DF2 /* PerFolioTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D5D384672EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo GoldTests" */;
+			buildConfigurationList = D5D384672EC489E800956DF2 /* Build configuration list for PBXNativeTarget "PerFolioTests" */;
 			buildPhases = (
 				D5D3844C2EC489E800956DF2 /* Sources */,
 				D5D3844D2EC489E800956DF2 /* Frameworks */,
@@ -152,18 +152,18 @@
 				D5D384522EC489E800956DF2 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				D5D384532EC489E800956DF2 /* Amigo GoldTests */,
+				D5D384532EC489E800956DF2 /* PerfolioTests */,
 			);
-			name = "Amigo GoldTests";
+			name = PerFolioTests;
 			packageProductDependencies = (
 			);
 			productName = "Amigo GoldTests";
-			productReference = D5D384502EC489E800956DF2 /* Amigo GoldTests.xctest */;
+			productReference = D5D384502EC489E800956DF2 /* PerFolioTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		D5D384592EC489E800956DF2 /* Amigo GoldUITests */ = {
+		D5D384592EC489E800956DF2 /* PerFolioUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D5D3846A2EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo GoldUITests" */;
+			buildConfigurationList = D5D3846A2EC489E800956DF2 /* Build configuration list for PBXNativeTarget "PerFolioUITests" */;
 			buildPhases = (
 				D5D384562EC489E800956DF2 /* Sources */,
 				D5D384572EC489E800956DF2 /* Frameworks */,
@@ -175,13 +175,13 @@
 				D5D3845C2EC489E800956DF2 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				D5D3845D2EC489E800956DF2 /* Amigo GoldUITests */,
+				D5D3845D2EC489E800956DF2 /* PerfolioUITests */,
 			);
-			name = "Amigo GoldUITests";
+			name = PerFolioUITests;
 			packageProductDependencies = (
 			);
 			productName = "Amigo GoldUITests";
-			productReference = D5D3845A2EC489E800956DF2 /* Amigo GoldUITests.xctest */;
+			productReference = D5D3845A2EC489E800956DF2 /* PerFolioUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -207,7 +207,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D5D3843C2EC489E600956DF2 /* Build configuration list for PBXProject "Amigo Gold" */;
+			buildConfigurationList = D5D3843C2EC489E600956DF2 /* Build configuration list for PBXProject "PerFolio" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -224,9 +224,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D5D384402EC489E600956DF2 /* Amigo Gold */,
-				D5D3844F2EC489E800956DF2 /* Amigo GoldTests */,
-				D5D384592EC489E800956DF2 /* Amigo GoldUITests */,
+				D5D384402EC489E600956DF2 /* PerFolio */,
+				D5D3844F2EC489E800956DF2 /* PerFolioTests */,
+				D5D384592EC489E800956DF2 /* PerFolioUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -283,12 +283,12 @@
 /* Begin PBXTargetDependency section */
 		D5D384522EC489E800956DF2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D5D384402EC489E600956DF2 /* Amigo Gold */;
+			target = D5D384402EC489E600956DF2 /* PerFolio */;
 			targetProxy = D5D384512EC489E800956DF2 /* PBXContainerItemProxy */;
 		};
 		D5D3845C2EC489E800956DF2 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D5D384402EC489E600956DF2 /* Amigo Gold */;
+			target = D5D384402EC489E600956DF2 /* PerFolio */;
 			targetProxy = D5D3845B2EC489E800956DF2 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -432,11 +432,11 @@
 				DEVELOPMENT_TEAM = 495XWEJ924;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "Amigo Gold/Gold-Info.plist";
+				INFOPLIST_FILE = "PerFolio/Gold-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "transak.Amigo-Gold";
+				PRODUCT_BUNDLE_IDENTIFIER = com.transak.perfolio;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -461,11 +461,11 @@
 				DEVELOPMENT_TEAM = 495XWEJ924;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "Amigo Gold/Gold-Info.plist";
+				INFOPLIST_FILE = "PerFolio/Gold-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "transak.Amigo-Gold";
+				PRODUCT_BUNDLE_IDENTIFIER = com.transak.perfolio;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -500,7 +500,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Amigo Gold.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Amigo Gold";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PerFolio.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PerFolio";
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
@@ -526,7 +526,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Amigo Gold.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Amigo Gold";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PerFolio.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PerFolio";
 				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
@@ -584,7 +584,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D5D3843C2EC489E600956DF2 /* Build configuration list for PBXProject "Amigo Gold" */ = {
+		D5D3843C2EC489E600956DF2 /* Build configuration list for PBXProject "PerFolio" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D5D384622EC489E800956DF2 /* Debug */,
@@ -593,7 +593,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D5D384642EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo Gold" */ = {
+		D5D384642EC489E800956DF2 /* Build configuration list for PBXNativeTarget "PerFolio" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D5D384652EC489E800956DF2 /* Debug */,
@@ -602,7 +602,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D5D384672EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo GoldTests" */ = {
+		D5D384672EC489E800956DF2 /* Build configuration list for PBXNativeTarget "PerFolioTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D5D384682EC489E800956DF2 /* Debug */,
@@ -611,7 +611,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D5D3846A2EC489E800956DF2 /* Build configuration list for PBXNativeTarget "Amigo GoldUITests" */ = {
+		D5D3846A2EC489E800956DF2 /* Build configuration list for PBXNativeTarget "PerFolioUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D5D3846B2EC489E800956DF2 /* Debug */,

@@ -1,6 +1,6 @@
 //
 //  Amigo_GoldApp.swift
-//  Amigo Gold
+// PerFolio
 //
 //  Created by Tirupati Balan on 12/11/25.
 //
