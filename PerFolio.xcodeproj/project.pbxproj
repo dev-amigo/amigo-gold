@@ -29,9 +29,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		18F3E1F8B1684BBEB5A5DF41 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = "PerFolio/Resources/Localization/Base.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		2CD06615193545B5AB62FA17 /* Dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Dev.xcconfig; path = "PerFolio/Configurations/Dev.xcconfig"; sourceTree = "<group>"; };
-		2EDB9B96681645C6BE7B00E1 /* Prod.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Prod.xcconfig; path = "PerFolio/Configurations/Prod.xcconfig"; sourceTree = "<group>"; };
+		18F3E1F8B1684BBEB5A5DF41 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = Base; path = PerFolio/Resources/Localization/Base.lproj/Localizable.strings; sourceTree = "<group>"; };
+		2CD06615193545B5AB62FA17 /* Dev.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Dev.xcconfig; path = PerFolio/Configurations/Dev.xcconfig; sourceTree = "<group>"; };
+		2EDB9B96681645C6BE7B00E1 /* Prod.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Prod.xcconfig; path = PerFolio/Configurations/Prod.xcconfig; sourceTree = "<group>"; };
 		D5D384412EC489E600956DF2 /* PerFolio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PerFolio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5D384502EC489E800956DF2 /* PerFolioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerFolioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D5D3845A2EC489E800956DF2 /* PerFolioUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerFolioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };

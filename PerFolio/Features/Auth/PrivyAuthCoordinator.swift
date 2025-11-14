@@ -10,6 +10,8 @@ enum PrivyAuthError: Error {
 protocol PrivyAuthenticating {
     func prepare()
     func startOAuthLogin() async throws -> any PrivyUser
+    func sendEmailCode(email: String) async throws
+    func verifyEmailCode(code: String) async throws -> any PrivyUser
     func verify(accessToken: String) async throws
 }
 
@@ -56,10 +58,24 @@ final class PrivyAuthCoordinator: ObservableObject, PrivyAuthenticating {
         observeAuthState(client: client)
     }
 
+    private var pendingEmail: String = ""
+    
     func startOAuthLogin() async throws -> any PrivyUser {
         guard let client else { throw PrivyAuthError.notConfigured }
         let provider = provider(from: environment.defaultOAuthProvider)
         return try await client.oAuth.login(with: provider, appUrlScheme: environment.deepLinkScheme)
+    }
+    
+    func sendEmailCode(email: String) async throws {
+        guard let client else { throw PrivyAuthError.notConfigured }
+        self.pendingEmail = email
+        try await client.email.sendCode(to: email)
+        AppLogger.log("Email verification code sent to \(email)", category: "auth")
+    }
+    
+    func verifyEmailCode(code: String) async throws -> any PrivyUser {
+        guard let client else { throw PrivyAuthError.notConfigured }
+        return try await client.email.loginWithCode(code, sentTo: pendingEmail)
     }
 
     func verify(accessToken: String) async throws {

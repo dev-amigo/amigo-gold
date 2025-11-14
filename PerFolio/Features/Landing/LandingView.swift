@@ -18,6 +18,59 @@ struct LandingView: View {
     }
 
     var body: some View {
+        Group {
+            if configuration.defaultOAuthProvider.lowercased() == "email" {
+                emailLoginFlow
+            } else {
+                oauthLoginView
+            }
+        }
+        .onAppear {
+            viewModel.onAppear()
+        }
+        .alert(item: $viewModel.alert) { alert in
+            Alert(
+                title: Text(alert.title),
+                message: Text(alert.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+    }
+    
+    private var emailLoginFlow: some View {
+        Group {
+            switch viewModel.emailLoginState {
+            case .emailInput:
+                VStack(spacing: 0) {
+                    if configuration.environment == .development {
+                        environmentBadge
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 24)
+                            .padding(.top, 24)
+                    }
+                    
+                    EmailInputView(
+                        email: $viewModel.email,
+                        onContinue: viewModel.sendEmailCode,
+                        isLoading: viewModel.isLoading
+                    )
+                    
+                    footer
+                        .padding(.bottom, 24)
+                }
+                .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
+                
+            case .codeVerification:
+                EmailVerificationView(
+                    email: viewModel.email,
+                    onCodeEntered: viewModel.verifyEmailCode,
+                    onCancel: viewModel.cancelEmailVerification
+                )
+            }
+        }
+    }
+    
+    private var oauthLoginView: some View {
         VStack(spacing: 32) {
             environmentBadge
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -65,16 +118,6 @@ struct LandingView: View {
         }
         .padding(24)
         .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
-        .onAppear {
-            viewModel.onAppear()
-        }
-        .alert(item: $viewModel.alert) { alert in
-            Alert(
-                title: Text(alert.title),
-                message: Text(alert.message),
-                dismissButton: .default(Text("OK"))
-            )
-        }
     }
 
     private var environmentBadge: some View {
