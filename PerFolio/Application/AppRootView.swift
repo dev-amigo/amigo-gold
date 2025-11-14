@@ -14,14 +14,15 @@ struct AppRootView: View {
                     proceedToMain()
                 }
             case .main:
-                PerFolioShellView()
+                PerFolioShellView(onLogout: {
+                    proceedToLanding()
+                })
             }
         }
         .animation(.easeInOut(duration: 0.35), value: route)
     }
 
     private func proceedToLanding() {
-        guard route == .splash else { return }
         route = .landing
     }
 
