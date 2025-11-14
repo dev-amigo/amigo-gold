@@ -11,17 +11,11 @@ struct PerFolioDashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Golden card with 20px padding
                     goldenHeroCard
-                        .padding(.horizontal, 20)
-
-                    // Other cards with standard padding
-                    VStack(spacing: 24) {
-                        walletConnectionCard
-                        yourGoldHoldingsCard
-                    }
-                    .padding(.horizontal, 20)
+                    walletConnectionCard
+                    yourGoldHoldingsCard
                 }
+                .padding(.horizontal, 20)
                 .padding(.vertical, 24)
             }
             .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
