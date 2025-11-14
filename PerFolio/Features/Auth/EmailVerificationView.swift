@@ -42,30 +42,56 @@ struct EmailVerificationView: View {
                 
                 // Code Input
                 PerFolioCard(style: .secondary) {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 20) {
                         Text("Enter 6-digit code")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        TextField("", text: $code)
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.center)
-                            .focused($isCodeFocused)
-                            .onChange(of: code) { oldValue, newValue in
-                                // Limit to 6 digits
-                                if newValue.count > 6 {
-                                    code = String(newValue.prefix(6))
-                                }
-                                // Auto-submit when 6 digits entered
-                                if code.count == 6 {
-                                    onCodeEntered(code)
-                                }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        
+                        // Code input with styled background
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(themeManager.perfolioTheme.primaryBackground)
+                                .frame(height: 70)
+                            
+                            if code.isEmpty {
+                                Text("000000")
+                                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                                    .foregroundStyle(themeManager.perfolioTheme.textSecondary.opacity(0.3))
+                                    .kerning(8)
                             }
+                            
+                            TextField("", text: $code)
+                                .font(.system(size: 36, weight: .bold, design: .rounded))
+                                .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.center)
+                                .focused($isCodeFocused)
+                                .kerning(8)
+                                .onChange(of: code) { oldValue, newValue in
+                                    // Only allow digits
+                                    let filtered = newValue.filter { $0.isNumber }
+                                    if filtered != newValue {
+                                        code = filtered
+                                    }
+                                    // Limit to 6 digits
+                                    if code.count > 6 {
+                                        code = String(code.prefix(6))
+                                    }
+                                    // Auto-submit when 6 digits entered
+                                    if code.count == 6 {
+                                        onCodeEntered(code)
+                                    }
+                                }
+                        }
+                        .frame(height: 70)
+                        
+                        // Code counter
+                        Text("\(code.count)/6")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textTertiary)
                     }
-                    .padding(20)
+                    .padding(24)
                 }
                 .padding(.horizontal, 24)
                 
@@ -79,9 +105,14 @@ struct EmailVerificationView: View {
                     }
                     
                     Button(action: onCancel) {
-                        Text("Use different email")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.left")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("Use different email")
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        }
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        .padding(.vertical, 12)
                     }
                 }
                 .padding(.horizontal, 24)

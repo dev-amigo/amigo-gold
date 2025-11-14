@@ -43,27 +43,60 @@ struct EmailInputView: View {
                 
                 // Email Input Card
                 PerFolioCard(style: .secondary) {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 20) {
                         Text("Enter your email")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        TextField("your@email.com", text: $email)
-                            .font(.system(size: 18, weight: .medium, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                            .keyboardType(.emailAddress)
-                            .textContentType(.emailAddress)
-                            .autocapitalization(.none)
-                            .focused($isEmailFocused)
-                            .submitLabel(.continue)
-                            .onSubmit {
-                                if isValidEmail && !isLoading {
-                                    onContinue()
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        
+                        // Email input with styled background
+                        HStack(spacing: 12) {
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(themeManager.perfolioTheme.primaryBackground)
+                                    .frame(height: 56)
+                                
+                                HStack {
+                                    TextField("your@email.com", text: $email)
+                                        .font(.system(size: 17, weight: .medium, design: .rounded))
+                                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                                        .keyboardType(.emailAddress)
+                                        .textContentType(.emailAddress)
+                                        .autocapitalization(.none)
+                                        .autocorrectionDisabled(true)
+                                        .focused($isEmailFocused)
+                                        .submitLabel(.continue)
+                                        .onSubmit {
+                                            if isValidEmail && !isLoading {
+                                                onContinue()
+                                            }
+                                        }
+                                        .padding(.horizontal, 16)
+                                    
+                                    if !email.isEmpty {
+                                        Image(systemName: isValidEmail ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                            .font(.system(size: 20))
+                                            .foregroundStyle(isValidEmail ? themeManager.perfolioTheme.success : themeManager.perfolioTheme.danger)
+                                            .padding(.trailing, 16)
+                                    }
                                 }
                             }
+                        }
+                        .frame(height: 56)
+                        
+                        // Email validation hint
+                        if !email.isEmpty && !isValidEmail {
+                            HStack(spacing: 6) {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.system(size: 12))
+                                Text("Please enter a valid email address")
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                            }
+                            .foregroundStyle(themeManager.perfolioTheme.danger)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
-                    .padding(20)
+                    .padding(24)
                 }
                 .padding(.horizontal, 24)
                 
