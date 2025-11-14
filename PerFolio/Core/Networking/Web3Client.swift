@@ -105,72 +105,45 @@ actor Web3Client {
     private let primaryRPC: String
     private let fallbackRPC: String
     private let session: URLSession
-    private var privyRPCClient: PrivyRPCClient?
     
     init(
         primaryRPC: String? = nil,
         fallbackRPC: String? = nil,
         session: URLSession = .shared
     ) {
+        // Get RPC URLs from configuration
+        let privyRPC = Bundle.main.object(forInfoDictionaryKey: "AGPrivyRPCURL") as? String ?? ""
         let configuredFallback = Bundle.main.object(forInfoDictionaryKey: "AGEthereumRPCFallback") as? String ?? ""
         let defaultFallback = "https://ethereum.publicnode.com"
         
-        // Initialize Privy REST API client if available
-        self.privyRPCClient = PrivyRPCClient(session: session)
+        // Use LlamaRPC as primary (fast, reliable, free)
+        // Privy RPC attempted but not available for general JSON-RPC
+        let llamaRPC = "https://eth.llamarpc.com"
         
-        // Set fallback RPC endpoints
-        self.primaryRPC = primaryRPC ?? (!configuredFallback.isEmpty ? configuredFallback : defaultFallback)
-        self.fallbackRPC = fallbackRPC ?? defaultFallback
+        self.primaryRPC = primaryRPC ?? llamaRPC
+        self.fallbackRPC = fallbackRPC ?? (!configuredFallback.isEmpty ? configuredFallback : defaultFallback)
         self.session = session
         
         // Log configuration
-        if privyRPCClient != nil {
-            AppLogger.log("🔗 Web3Client initialized with Privy REST API", category: "web3")
-            AppLogger.log("   Primary: Privy REST API (gas sponsorship enabled)", category: "web3")
-            AppLogger.log("   Fallback 1: \(self.primaryRPC)", category: "web3")
-            AppLogger.log("   Fallback 2: \(self.fallbackRPC)", category: "web3")
-        } else {
-            AppLogger.log("🔗 Web3Client initialized with HTTP RPC", category: "web3")
-            AppLogger.log("   Primary: \(self.primaryRPC)", category: "web3")
-            AppLogger.log("   Fallback: \(self.fallbackRPC)", category: "web3")
-            AppLogger.log("💡 Privy REST API will be available after login", category: "web3")
-        }
-    }
-    
-    /// Reinitialize Privy RPC client (call after login)
-    func refreshPrivyClient() async {
-        self.privyRPCClient = PrivyRPCClient(session: session)
-        if privyRPCClient != nil {
-            AppLogger.log("✅ Privy REST API client refreshed", category: "web3")
-        }
+        AppLogger.log("🔗 Web3Client initialized", category: "web3")
+        AppLogger.log("   Primary RPC: \(self.primaryRPC)", category: "web3")
+        AppLogger.log("   Fallback RPC: \(self.fallbackRPC)", category: "web3")
+        AppLogger.log("💡 Gas sponsorship for transactions will use Privy SDK", category: "web3")
     }
     
     /// Make a generic RPC call with automatic fallback
     func call(method: String, params: [Any]) async throws -> Any {
-        // Try Privy REST API first (if available)
-        if let privyClient = privyRPCClient {
-            do {
-                let result = try await privyClient.call(method: method, params: params)
-                AppLogger.log("RPC call successful (Privy REST API): \(method)", category: "web3")
-                return result
-            } catch {
-                AppLogger.log("Privy REST API failed for \(method): \(error)", category: "web3")
-                // Continue to HTTP RPC fallbacks
-            }
-        }
-        
-        // Fallback 1: Try primary HTTP RPC
+        // Try primary RPC
         do {
             let result = try await makeRPCCall(to: primaryRPC, method: method, params: params)
-            AppLogger.log("RPC call successful (HTTP primary): \(method)", category: "web3")
             return result
         } catch {
-            AppLogger.log("Primary HTTP RPC failed for \(method): \(error)", category: "web3")
+            AppLogger.log("Primary RPC failed for \(method): \(error.localizedDescription)", category: "web3")
             
-            // Fallback 2: Try secondary HTTP RPC
+            // Try fallback RPC
             do {
                 let result = try await makeRPCCall(to: fallbackRPC, method: method, params: params)
-                AppLogger.log("RPC call successful (HTTP fallback): \(method)", category: "web3")
+                AppLogger.log("Fallback RPC succeeded for \(method)", category: "web3")
                 return result
             } catch {
                 AppLogger.log("All RPC endpoints failed for \(method)", category: "web3")
