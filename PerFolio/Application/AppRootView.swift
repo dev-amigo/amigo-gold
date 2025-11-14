@@ -8,7 +8,7 @@ struct AppRootView: View {
         ZStack {
             switch route {
             case .splash:
-                SplashView { proceedToLanding() }
+                SplashView { checkAuthAndProceed() }
             case .landing:
                 LandingView(authCoordinator: privyCoordinator) {
                     proceedToMain()
@@ -20,6 +20,22 @@ struct AppRootView: View {
             }
         }
         .animation(.easeInOut(duration: 0.35), value: route)
+    }
+
+    private func checkAuthAndProceed() {
+        // Check if user has an active session
+        let hasWalletAddress = UserDefaults.standard.string(forKey: "userWalletAddress") != nil
+        let hasAccessToken = UserDefaults.standard.string(forKey: "privyAccessToken") != nil
+        
+        if hasWalletAddress && hasAccessToken {
+            // User is already logged in, go directly to dashboard
+            AppLogger.log("✅ Active session found, skipping login", category: "auth")
+            route = .main
+        } else {
+            // No active session, show landing page
+            AppLogger.log("ℹ️ No active session, showing landing page", category: "auth")
+            route = .landing
+        }
     }
 
     private func proceedToLanding() {

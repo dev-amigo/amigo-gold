@@ -13,7 +13,6 @@ struct PerFolioDashboardView: View {
                 VStack(spacing: 24) {
                     // Golden card with 20px padding
                     goldenHeroCard
-                        .padding(.horizontal, 20)
                     
                     // Other cards with standard padding
                     VStack(spacing: 24) {
