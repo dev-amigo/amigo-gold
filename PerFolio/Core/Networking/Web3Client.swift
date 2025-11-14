@@ -111,13 +111,21 @@ actor Web3Client {
         fallbackRPC: String = "https://ethereum.publicnode.com",
         session: URLSession = .shared
     ) {
-        // Read Alchemy API key from Info.plist
-        let alchemyKey = Bundle.main.object(forInfoDictionaryKey: "AGAlchemyAPIKey") as? String ?? "demo"
-        self.primaryRPC = primaryRPC ?? "https://eth-mainnet.g.alchemy.com/v2/\(alchemyKey)"
+        // Use Privy RPC with gas sponsorship enabled
+        let privyRPCURL = Bundle.main.object(forInfoDictionaryKey: "AGPrivyRPCURL") as? String ?? ""
+        
+        if !privyRPCURL.isEmpty {
+            self.primaryRPC = primaryRPC ?? privyRPCURL
+            AppLogger.log("🔗 Web3Client initialized with Privy RPC (gas sponsorship enabled)", category: "web3")
+            AppLogger.log("   RPC: \(privyRPCURL)", category: "web3")
+        } else {
+            // Fallback to public node if Privy RPC not configured
+            self.primaryRPC = primaryRPC ?? fallbackRPC
+            AppLogger.log("⚠️ Privy RPC not configured, using fallback", category: "web3")
+        }
+        
         self.fallbackRPC = fallbackRPC
         self.session = session
-        
-        AppLogger.log("Web3Client initialized with Alchemy key: \(alchemyKey.prefix(4))...", category: "web3")
     }
     
     /// Make a generic RPC call with automatic fallback

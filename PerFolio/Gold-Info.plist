@@ -75,11 +75,11 @@
 	<string>$(PRIVY_APP_CLIENT_ID)</string>
 	<key>AGPrivyJWKSURL</key>
 	<string>$(PRIVY_JWKS_URL)</string>
+	<key>AGPrivyRPCURL</key>
+	<string>$(PRIVY_RPC_URL)</string>
 	<key>AGDeepLinkScheme</key>
 	<string>$(DEEP_LINK_SCHEME)</string>
 	<key>AGDefaultOAuthProvider</key>
 	<string>$(DEFAULT_OAUTH_PROVIDER)</string>
-	<key>AGAlchemyAPIKey</key>
-	<string>$(ALCHEMY_API_KEY)</string>
 </dict>
 </plist>
