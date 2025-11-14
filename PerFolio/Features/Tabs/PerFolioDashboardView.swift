@@ -13,7 +13,8 @@ struct PerFolioDashboardView: View {
                 VStack(spacing: 24) {
                     // Golden card with 20px padding
                     goldenHeroCard
-                    
+                        .padding(.horizontal, 20)
+
                     // Other cards with standard padding
                     VStack(spacing: 24) {
                         walletConnectionCard
@@ -88,7 +89,7 @@ struct PerFolioDashboardView: View {
     // MARK: - Golden Hero Card
     
     private var goldenHeroCard: some View {
-        PerFolioCard(style: .gradient, padding: 24) {
+        PerFolioCard(style: .gradient) {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Your Gold Portfolio")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
