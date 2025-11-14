@@ -103,6 +103,7 @@ struct PerFolioDashboardView: View {
                         .foregroundStyle(.white)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
     

@@ -39,7 +39,7 @@ struct PerFolioCard<Content: View>: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(themeManager.perfolioTheme.secondaryBackground)
         case .gradient:
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(themeManager.perfolioTheme.goldenBoxGradient)
         case .primary:
             RoundedRectangle(cornerRadius: 16, style: .continuous)
