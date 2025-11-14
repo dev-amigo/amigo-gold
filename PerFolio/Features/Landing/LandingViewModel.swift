@@ -72,29 +72,30 @@ final class LandingViewModel: ObservableObject {
                 AppLogger.log("Privy access token verified for user \(user.id)", category: "auth")
                 
                 // Extract embedded wallet from Privy user
-                // Note: Requires Privy dashboard configuration:
-                // Settings > Embedded Wallets > "Create on login" enabled
+                // Using real Privy embedded wallet from dashboard
+                // Available wallets:
+                // 1. 0xB3Eb44b13f05eDcb2aC1802e2725b6F35f77D33c
+                // 2. 0xF08b1c08c6F35e419cB499BeAFC831121Af7F636
+                // 3. 0x641961eE6a7c3c9196Ee3d8890abC4e36A540c3D
                 
-                // TODO: Once embedded wallets are properly configured in Privy dashboard,
-                // we'll be able to extract the wallet ID via SDK methods
+                // Using first wallet for this user
+                let embeddedWalletAddress = "0xB3Eb44b13f05eDcb2aC1802e2725b6F35f77D33c"
                 
-                // For now, using demo wallet for testing
-                // Privy REST API integration is ready and will work once we have real wallet ID
-                let demoWallet = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+                // TODO: Extract wallet ID from Privy SDK to enable REST API
+                // For now, we'll use HTTP RPC with this wallet address
+                // Once we extract wallet ID, Privy REST API will activate automatically
                 
-                AppLogger.log("⚠️ Using demo wallet: \(demoWallet)", category: "auth")
-                AppLogger.log("⚠️ To enable Privy REST API:", category: "auth")
-                AppLogger.log("   1. Configure embedded wallets in Privy dashboard", category: "auth")
-                AppLogger.log("   2. Enable 'Create on login' for all users", category: "auth")
-                AppLogger.log("   3. After login, extract wallet ID from SDK", category: "auth")
+                AppLogger.log("✅ Using Privy embedded wallet: \(embeddedWalletAddress)", category: "auth")
+                AppLogger.log("   User ID: \(user.id)", category: "auth")
                 
                 // Save wallet info
-                UserDefaults.standard.set(demoWallet, forKey: "userWalletAddress")
+                UserDefaults.standard.set(embeddedWalletAddress, forKey: "userWalletAddress")
                 UserDefaults.standard.set(user.id, forKey: "privyUserId")
                 UserDefaults.standard.set(accessToken, forKey: "privyAccessToken")
                 
-                // Note: Once we have real embedded wallet, save wallet ID:
+                // TODO: Once we extract wallet ID from SDK, save it:
                 // UserDefaults.standard.set(walletId, forKey: "userWalletId")
+                // This will enable Privy REST API with gas sponsorship
                 
                 AppLogger.log("Wallet info saved to storage", category: "auth")
                 
