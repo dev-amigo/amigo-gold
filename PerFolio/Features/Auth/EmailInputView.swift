@@ -66,6 +66,13 @@ struct EmailInputView: View {
                                         .autocorrectionDisabled(true)
                                         .focused($isEmailFocused)
                                         .submitLabel(.continue)
+                                        .onChange(of: email) { oldValue, newValue in
+                                            // Trim whitespace and normalize
+                                            let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                                            if trimmed != newValue {
+                                                email = trimmed
+                                            }
+                                        }
                                         .onSubmit {
                                             if isValidEmail && !isLoading {
                                                 onContinue()

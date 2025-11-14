@@ -68,13 +68,16 @@ final class PrivyAuthCoordinator: ObservableObject, PrivyAuthenticating {
     
     func sendEmailCode(email: String) async throws {
         guard let client else { throw PrivyAuthError.notConfigured }
-        self.pendingEmail = email
-        try await client.email.sendCode(to: email)
-        AppLogger.log("Email verification code sent to \(email)", category: "auth")
+        // Trim whitespace and store email
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        self.pendingEmail = trimmedEmail
+        try await client.email.sendCode(to: trimmedEmail)
+        AppLogger.log("Email verification code sent to \(trimmedEmail)", category: "auth")
     }
     
     func verifyEmailCode(code: String) async throws -> any PrivyUser {
         guard let client else { throw PrivyAuthError.notConfigured }
+        AppLogger.log("Verifying code '\(code)' for email '\(pendingEmail)'", category: "auth")
         return try await client.email.loginWithCode(code, sentTo: pendingEmail)
     }
 

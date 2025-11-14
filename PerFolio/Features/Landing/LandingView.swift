@@ -64,7 +64,8 @@ struct LandingView: View {
                 EmailVerificationView(
                     email: viewModel.email,
                     onCodeEntered: viewModel.verifyEmailCode,
-                    onCancel: viewModel.cancelEmailVerification
+                    onCancel: viewModel.cancelEmailVerification,
+                    onResendCode: viewModel.resendEmailCode
                 )
             }
         }

@@ -4,6 +4,7 @@ struct EmailVerificationView: View {
     let email: String
     let onCodeEntered: (String) -> Void
     let onCancel: () -> Void
+    let onResendCode: () -> Void
     
     @State private var code: String = ""
     @FocusState private var isCodeFocused: Bool
@@ -104,15 +105,28 @@ struct EmailVerificationView: View {
                         onCodeEntered(code)
                     }
                     
-                    Button(action: onCancel) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "arrow.left")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("Use different email")
-                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    HStack(spacing: 24) {
+                        Button(action: onResendCode) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 14, weight: .semibold))
+                                Text("Resend code")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                            .padding(.vertical, 12)
                         }
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                        .padding(.vertical, 12)
+                        
+                        Button(action: onCancel) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "arrow.left")
+                                    .font(.system(size: 14, weight: .semibold))
+                                Text("Back")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                            .padding(.vertical, 12)
+                        }
                     }
                 }
                 .padding(.horizontal, 24)
@@ -130,7 +144,8 @@ struct EmailVerificationView: View {
     EmailVerificationView(
         email: "user@example.com",
         onCodeEntered: { _ in },
-        onCancel: {}
+        onCancel: {},
+        onResendCode: {}
     )
     .environmentObject(ThemeManager())
 }

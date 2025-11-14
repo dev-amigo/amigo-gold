@@ -62,7 +62,11 @@ final class LandingViewModel: ObservableObject {
         isLoading = true
         Task {
             do {
-                let user = try await authCoordinator.verifyEmailCode(code: code)
+                // Trim and clean the code
+                let cleanCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
+                AppLogger.log("Attempting to verify code: '\(cleanCode)' for email: '\(email)'", category: "auth")
+                
+                let user = try await authCoordinator.verifyEmailCode(code: cleanCode)
                 let accessToken = try await user.getAccessToken()
                 try await authCoordinator.verify(accessToken: accessToken)
                 AppLogger.log("Privy access token verified for user \(user.id)", category: "auth")
@@ -74,11 +78,37 @@ final class LandingViewModel: ObservableObject {
                 onAuthenticated()
             } catch {
                 isLoading = false
+                let errorMessage = error.localizedDescription
                 alert = AlertConfig(
                     title: "Verification Failed",
-                    message: "Invalid code. Please try again."
+                    message: errorMessage.contains("422") || errorMessage.contains("Invalid") 
+                        ? "The code you entered is incorrect or has expired. Please try again or request a new code."
+                        : "Something went wrong. Please try again."
                 )
-                AppLogger.log("Email code verification failed: \(error.localizedDescription)", category: "auth")
+                AppLogger.log("Email code verification failed: \(error)", category: "auth")
+            }
+        }
+    }
+    
+    func resendEmailCode() {
+        guard !isLoading else { return }
+        isLoading = true
+        Task {
+            do {
+                try await authCoordinator.sendEmailCode(email: email)
+                isLoading = false
+                alert = AlertConfig(
+                    title: "Code Resent",
+                    message: "A new verification code has been sent to \(email)"
+                )
+                AppLogger.log("Email code resent to \(email)", category: "auth")
+            } catch {
+                isLoading = false
+                alert = AlertConfig(
+                    title: "Error",
+                    message: "Failed to resend verification code. Please try again."
+                )
+                AppLogger.log("Failed to resend email code: \(error.localizedDescription)", category: "auth")
             }
         }
     }
