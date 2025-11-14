@@ -14,7 +14,7 @@ struct AppRootView: View {
                     proceedToMain()
                 }
             case .main:
-                TradingShellView()
+                PerFolioShellView()
             }
         }
         .animation(.easeInOut(duration: 0.35), value: route)
