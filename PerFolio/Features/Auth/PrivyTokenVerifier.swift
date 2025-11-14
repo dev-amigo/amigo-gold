@@ -101,13 +101,15 @@ actor PrivyTokenVerifier {
         let secAlgorithm: SecKeyAlgorithm
         if algorithm == "ES256" {
             secAlgorithm = .ecdsaSignatureMessageX962SHA256
-            // ES256 signatures can be either DER-encoded or raw format
-            // Check if it's DER (starts with 0x30 SEQUENCE tag) and convert if needed
+            // JWT ES256 signatures are in raw format (r||s), but SecKey expects DER
+            // Check if it's already DER (starts with 0x30 SEQUENCE tag)
             if signatureData.count > 0 && signatureData[0] == 0x30 {
-                signatureData = try derToRawSignature(signatureData)
-                AppLogger.log("Converted DER signature to raw format (\(signatureData.count) bytes)", category: "auth")
+                AppLogger.log("Signature already in DER format (\(signatureData.count) bytes)", category: "auth")
             } else {
-                AppLogger.log("Signature already in raw format (\(signatureData.count) bytes)", category: "auth")
+                // Convert raw format to DER for SecKey
+                AppLogger.log("Converting raw signature (\(signatureData.count) bytes) to DER format", category: "auth")
+                signatureData = try rawToDerSignature(signatureData)
+                AppLogger.log("Converted to DER signature (\(signatureData.count) bytes)", category: "auth")
             }
         } else {
             secAlgorithm = .rsaSignatureMessagePKCS1v15SHA256
@@ -291,6 +293,31 @@ actor PrivyTokenVerifier {
         var data = Data([0x80 | UInt8(bytes.count)])
         data.append(contentsOf: bytes)
         return data
+    }
+    
+    /// Converts raw ECDSA signature (r || s) to DER format
+    /// ES256 uses P-256 curve, so r and s are each 32 bytes
+    private func rawToDerSignature(_ rawSignature: Data) throws -> Data {
+        guard rawSignature.count == 64 else {
+            AppLogger.log("Raw signature: Expected 64 bytes, got \(rawSignature.count)", category: "auth")
+            throw PrivyTokenVerifierError.decodingFailed
+        }
+        
+        // Split into r and s (32 bytes each)
+        let rData = rawSignature.prefix(32)
+        let sData = rawSignature.suffix(32)
+        
+        // Encode as DER INTEGERs
+        let rInteger = derEncodeInteger(Data(rData))
+        let sInteger = derEncodeInteger(Data(sData))
+        
+        // Build SEQUENCE
+        let sequenceContent = rInteger + sInteger
+        let derSignature = derEncode(tag: 0x30, data: sequenceContent)
+        
+        AppLogger.log("Raw to DER: r=32 bytes, s=32 bytes -> DER=\(derSignature.count) bytes", category: "auth")
+        
+        return derSignature
     }
     
     /// Converts DER-encoded ECDSA signature to raw format (r || s)
