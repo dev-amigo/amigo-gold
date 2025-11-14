@@ -24,32 +24,37 @@ struct LandingView: View {
 
             Spacer()
 
-            AGSurfaceCard {
-                VStack(spacing: 20) {
-                    Image(systemName: "shield.checkerboard.rotation")
-                        .symbolVariant(.fill)
-                        .font(.system(size: 58, weight: .regular, design: .rounded))
-                        .foregroundStyle(themeManager.palette.foreground)
-                        .padding()
+            PerFolioCard(style: .secondary) {
+                VStack(spacing: 24) {
+                    // Gold icon
+                    Image(systemName: "circle.grid.cross.fill")
+                        .symbolRenderingMode(.hierarchical)
+                        .font(.system(size: 64, weight: .regular, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        .padding(20)
                         .background(
-                            RoundedRectangle(cornerRadius: 32, style: .continuous)
-                                .fill(themeManager.palette.surfaceSecondary)
+                            Circle()
+                                .fill(themeManager.perfolioTheme.tintColor.opacity(0.15))
                         )
+                    
                     VStack(spacing: 12) {
                         Text(L10n.text(.landingTitle))
-                            .font(themeManager.typography.title)
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                             .multilineTextAlignment(.center)
+                        
                         Text(L10n.text(.landingSubtitle))
-                            .font(themeManager.typography.subtitle)
-                            .foregroundStyle(themeManager.palette.subdued)
+                            .font(.system(size: 16, weight: .regular, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.horizontal)
                 }
             }
 
-            AGPrimaryButton(
-                title: viewModel.isLoading ? L10n.text(.landingCTALoading) : L10n.text(.landingCTA),
+            PerFolioButton(
+                viewModel.isLoading ? "Opening Privy..." : "Login with Privy",
+                style: .primary,
                 isLoading: viewModel.isLoading,
                 action: viewModel.loginTapped
             )
@@ -59,7 +64,7 @@ struct LandingView: View {
             footer
         }
         .padding(24)
-        .background(themeManager.palette.background.ignoresSafeArea())
+        .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
         .onAppear {
             viewModel.onAppear()
         }
@@ -76,11 +81,11 @@ struct LandingView: View {
         Group {
             if configuration.environment == .development {
                 Text(L10n.text(.landingEnvironmentBadge))
-                    .font(themeManager.typography.badge)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                     .padding(.vertical, 6)
                     .padding(.horizontal, 12)
-                    .foregroundStyle(themeManager.palette.background)
-                    .background(themeManager.palette.foreground)
+                    .foregroundStyle(themeManager.perfolioTheme.primaryBackground)
+                    .background(themeManager.perfolioTheme.tintColor)
                     .clipShape(Capsule())
             }
         }
@@ -89,11 +94,11 @@ struct LandingView: View {
     private var footer: some View {
         VStack(spacing: 6) {
             Text(configuration.environment.displayName)
-                .font(themeManager.typography.subtitle)
-                .foregroundStyle(themeManager.palette.subdued)
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
             Text(configuration.apiBaseURL.absoluteString)
-                .font(.caption)
-                .foregroundStyle(themeManager.palette.subdued)
+                .font(.system(size: 12, weight: .regular, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textTertiary)
         }
     }
 }
