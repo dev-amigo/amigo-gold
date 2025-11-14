@@ -101,9 +101,14 @@ actor PrivyTokenVerifier {
         let secAlgorithm: SecKeyAlgorithm
         if algorithm == "ES256" {
             secAlgorithm = .ecdsaSignatureMessageX962SHA256
-            // ES256 JWT signatures are DER-encoded, need to convert to raw format
-            signatureData = try derToRawSignature(signatureData)
-            AppLogger.log("Converted DER signature to raw format (\(signatureData.count) bytes)", category: "auth")
+            // ES256 signatures can be either DER-encoded or raw format
+            // Check if it's DER (starts with 0x30 SEQUENCE tag) and convert if needed
+            if signatureData.count > 0 && signatureData[0] == 0x30 {
+                signatureData = try derToRawSignature(signatureData)
+                AppLogger.log("Converted DER signature to raw format (\(signatureData.count) bytes)", category: "auth")
+            } else {
+                AppLogger.log("Signature already in raw format (\(signatureData.count) bytes)", category: "auth")
+            }
         } else {
             secAlgorithm = .rsaSignatureMessagePKCS1v15SHA256
         }
