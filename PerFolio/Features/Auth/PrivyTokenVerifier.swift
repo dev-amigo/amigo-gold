@@ -74,7 +74,7 @@ actor PrivyTokenVerifier {
 
         guard
             let headerData = Data(base64URLEncoded: String(segments[0])),
-            let signatureData = Data(base64URLEncoded: String(segments[2]))
+            var signatureData = Data(base64URLEncoded: String(segments[2]))
         else {
             AppLogger.log("Token verification failed: Base64 decoding failed", category: "auth")
             throw PrivyTokenVerifierError.decodingFailed
@@ -101,6 +101,9 @@ actor PrivyTokenVerifier {
         let secAlgorithm: SecKeyAlgorithm
         if algorithm == "ES256" {
             secAlgorithm = .ecdsaSignatureMessageX962SHA256
+            // ES256 JWT signatures are DER-encoded, need to convert to raw format
+            signatureData = try derToRawSignature(signatureData)
+            AppLogger.log("Converted DER signature to raw format (\(signatureData.count) bytes)", category: "auth")
         } else {
             secAlgorithm = .rsaSignatureMessagePKCS1v15SHA256
         }
@@ -283,5 +286,76 @@ actor PrivyTokenVerifier {
         var data = Data([0x80 | UInt8(bytes.count)])
         data.append(contentsOf: bytes)
         return data
+    }
+    
+    /// Converts DER-encoded ECDSA signature to raw format (r || s)
+    /// ES256 uses P-256 curve, so r and s are each 32 bytes
+    private func derToRawSignature(_ derSignature: Data) throws -> Data {
+        var index = 0
+        
+        // Check SEQUENCE tag
+        guard derSignature[index] == 0x30 else {
+            AppLogger.log("DER signature: Expected SEQUENCE tag", category: "auth")
+            throw PrivyTokenVerifierError.decodingFailed
+        }
+        index += 1
+        
+        // Skip sequence length
+        let sequenceLength = Int(derSignature[index])
+        index += 1
+        
+        // Extract r
+        guard derSignature[index] == 0x02 else {
+            AppLogger.log("DER signature: Expected INTEGER tag for r", category: "auth")
+            throw PrivyTokenVerifierError.decodingFailed
+        }
+        index += 1
+        
+        let rLength = Int(derSignature[index])
+        index += 1
+        
+        var rData = derSignature.subdata(in: index..<index+rLength)
+        index += rLength
+        
+        // Remove leading zero byte if present (added for sign bit)
+        if rData.count == 33 && rData[0] == 0x00 {
+            rData = rData.dropFirst()
+        }
+        
+        // Pad to 32 bytes if needed
+        while rData.count < 32 {
+            rData.insert(0x00, at: 0)
+        }
+        
+        // Extract s
+        guard derSignature[index] == 0x02 else {
+            AppLogger.log("DER signature: Expected INTEGER tag for s", category: "auth")
+            throw PrivyTokenVerifierError.decodingFailed
+        }
+        index += 1
+        
+        let sLength = Int(derSignature[index])
+        index += 1
+        
+        var sData = derSignature.subdata(in: index..<index+sLength)
+        
+        // Remove leading zero byte if present
+        if sData.count == 33 && sData[0] == 0x00 {
+            sData = sData.dropFirst()
+        }
+        
+        // Pad to 32 bytes if needed
+        while sData.count < 32 {
+            sData.insert(0x00, at: 0)
+        }
+        
+        // Concatenate r and s
+        var rawSignature = Data()
+        rawSignature.append(rData)
+        rawSignature.append(sData)
+        
+        AppLogger.log("DER to raw: r=\(rData.count) bytes, s=\(sData.count) bytes, total=\(rawSignature.count) bytes", category: "auth")
+        
+        return rawSignature
     }
 }
