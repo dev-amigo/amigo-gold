@@ -64,23 +64,39 @@ actor PrivyTokenVerifier {
 
     func verify(accessToken: String) async throws {
         let segments = accessToken.split(separator: ".")
-        guard segments.count == 3 else { throw PrivyTokenVerifierError.invalidTokenFormat }
+        guard segments.count == 3 else {
+            AppLogger.log("Token verification failed: Invalid format (segments: \(segments.count))", category: "auth")
+            throw PrivyTokenVerifierError.invalidTokenFormat
+        }
 
         guard
             let headerData = Data(base64URLEncoded: String(segments[0])),
             let signatureData = Data(base64URLEncoded: String(segments[2]))
         else {
+            AppLogger.log("Token verification failed: Base64 decoding failed", category: "auth")
             throw PrivyTokenVerifierError.decodingFailed
         }
 
         let header = try JSONDecoder().decode(JWTHeader.self, from: headerData)
-        guard header.alg.uppercased() == "RS256" else { throw PrivyTokenVerifierError.unsupportedAlgorithm }
+        AppLogger.log("Token header - alg: \(header.alg), kid: \(header.kid)", category: "auth")
+        
+        guard header.alg.uppercased() == "RS256" else {
+            AppLogger.log("Token verification failed: Unsupported algorithm '\(header.alg)'", category: "auth")
+            throw PrivyTokenVerifierError.unsupportedAlgorithm
+        }
 
         let jwk = try await key(for: header.kid)
+        AppLogger.log("Found JWK for kid: \(header.kid), alg: \(jwk.alg ?? "none"), kty: \(jwk.kty)", category: "auth")
+        
         let publicKey = try buildPublicKey(from: jwk)
+        AppLogger.log("Public key created successfully", category: "auth")
 
         let signedInput = Data("\(segments[0]).\(segments[1])".utf8)
-        guard SecKeyIsAlgorithmSupported(publicKey, .verify, .rsaSignatureMessagePKCS1v15SHA256) else {
+        let isSupported = SecKeyIsAlgorithmSupported(publicKey, .verify, .rsaSignatureMessagePKCS1v15SHA256)
+        AppLogger.log("RSA algorithm supported: \(isSupported)", category: "auth")
+        
+        guard isSupported else {
+            AppLogger.log("Token verification failed: Algorithm not supported by SecKey", category: "auth")
             throw PrivyTokenVerifierError.unsupportedAlgorithm
         }
 
@@ -95,11 +111,15 @@ actor PrivyTokenVerifier {
 
         if !verified {
             if let err = error?.takeRetainedValue() {
+                AppLogger.log("Token verification failed: \(err)", category: "auth")
                 throw err
             } else {
+                AppLogger.log("Token verification failed: Invalid signature", category: "auth")
                 throw PrivyTokenVerifierError.signatureInvalid
             }
         }
+        
+        AppLogger.log("Token verification succeeded!", category: "auth")
     }
 
     private func key(for kid: String) async throws -> JWK {
@@ -133,13 +153,18 @@ actor PrivyTokenVerifier {
 
     private func buildPublicKey(from jwk: JWK) throws -> SecKey {
         if let algorithm = jwk.alg, algorithm.uppercased() != "RS256" {
+            AppLogger.log("buildPublicKey failed: JWK algorithm '\(algorithm)' is not RS256", category: "auth")
             throw PrivyTokenVerifierError.unsupportedAlgorithm
         }
-        guard jwk.kty.uppercased() == "RSA" else { throw PrivyTokenVerifierError.unsupportedAlgorithm }
+        guard jwk.kty.uppercased() == "RSA" else {
+            AppLogger.log("buildPublicKey failed: JWK key type '\(jwk.kty)' is not RSA", category: "auth")
+            throw PrivyTokenVerifierError.unsupportedAlgorithm
+        }
         guard
             let modulus = Data(base64URLEncoded: jwk.n),
             let exponent = Data(base64URLEncoded: jwk.e)
         else {
+            AppLogger.log("buildPublicKey failed: Unable to decode modulus or exponent", category: "auth")
             throw PrivyTokenVerifierError.decodingFailed
         }
 
@@ -151,9 +176,11 @@ actor PrivyTokenVerifier {
         ]
 
         guard let key = SecKeyCreateWithData(keyData as CFData, attributes as CFDictionary, nil) else {
+            AppLogger.log("buildPublicKey failed: SecKeyCreateWithData returned nil", category: "auth")
             throw PrivyTokenVerifierError.keyCreationFailed
         }
 
+        AppLogger.log("buildPublicKey succeeded: Created RSA public key", category: "auth")
         return key
     }
 
