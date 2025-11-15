@@ -14,6 +14,7 @@ actor ERC20Contract {
     enum Token {
         case paxg
         case usdt
+        case usdc  // NEW: For Fluid Protocol borrow
         
         var address: String {
             switch self {
@@ -21,6 +22,8 @@ actor ERC20Contract {
                 return "0x45804880De22913dAFE09f4980848ECE6EcbAf78"
             case .usdt:
                 return "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+            case .usdc:
+                return "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
             }
         }
         
@@ -28,6 +31,7 @@ actor ERC20Contract {
             switch self {
             case .paxg: return "PAXG"
             case .usdt: return "USDT"
+            case .usdc: return "USDC"
             }
         }
         
@@ -35,6 +39,7 @@ actor ERC20Contract {
             switch self {
             case .paxg: return 18
             case .usdt: return 6
+            case .usdc: return 6  // USDC also uses 6 decimals
             }
         }
     }

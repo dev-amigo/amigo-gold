@@ -19,13 +19,19 @@ enum ContractAddresses {
     /// Uniswap V3 Router on Ethereum Mainnet
     static let uniswapV3Router = "0xE592427A0AEce92De3Edee1F18E0157C05861564"
     
-    // MARK: - Fluid Protocol (Placeholder for Phase 4)
+    /// USDC (USD Coin) on Ethereum Mainnet
+    static let usdc = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
     
-    /// Fluid PAXG/USDT Vault (to be updated)
-    static let fluidPaxgUsdtVault = "0x0000000000000000000000000000000000000000"
+    // MARK: - Fluid Protocol (Borrow Feature)
     
-    /// Fluid Vault Resolver (to be updated)
-    static let fluidVaultResolver = "0x0000000000000000000000000000000000000000"
+    /// Fluid PAXG/USDC Vault - Main vault for collateralized lending
+    static let fluidPaxgUsdcVault = "0x238207734AdBD22037af0437Ef65F13bABbd1917"
+    
+    /// Fluid Vault Resolver - For fetching vault config and user positions
+    static let fluidVaultResolver = "0x394Ce45678e0019c0045194a561E2bEd0FCc6Cf0"
+    
+    /// Fluid Lending Resolver - For fetching borrow APY rates
+    static let fluidLendingResolver = "0xC215485C572365AE87f908ad35233EC2572A3BEC"
 }
 
 /// DEX and on-ramp configuration constants
