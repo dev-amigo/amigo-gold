@@ -47,6 +47,7 @@ final class DepositBuyViewModel: ObservableObject {
     @Published var selectedPaymentMethod: PaymentMethod = .upi
     @Published var viewState: ViewState = .input
     @Published var currentQuote: OnMetaService.Quote?
+    @Published var unifiedQuote: UnifiedDepositQuote?  // NEW: Unified Fiat → PAXG quote
     
     // Swap-related
     @Published var usdtAmount: String = ""
@@ -114,6 +115,64 @@ final class DepositBuyViewModel: ObservableObject {
             viewState = .error(error.localizedDescription)
             showError(error.localizedDescription)
             AppLogger.log("❌ Quote failed: \(error.localizedDescription)", category: "depositbuy")
+        }
+    }
+    
+    // MARK: - Unified Deposit Quote (Fiat → PAXG)
+    
+    /// Get unified quote that chains Fiat → USDT → PAXG
+    /// Shows user final PAXG amount they'll receive in one step
+    func getUnifiedDepositQuote() async {
+        // Validate amount using currency-aware validation
+        guard let fiatAmount = selectedFiatCurrency.parse(inrAmount),
+              selectedFiatCurrency.validate(fiatAmount) else {
+            let errorMsg = selectedFiatCurrency.validationError(for: selectedFiatCurrency.parse(inrAmount) ?? 0)
+            showError(errorMsg)
+            return
+        }
+        
+        viewState = .processing
+        
+        do {
+            // Step 1: Get OnMeta quote (Fiat → USDT)
+            AppLogger.log("🔗 Step 1/2: Getting OnMeta quote...", category: "depositbuy")
+            let onMetaQuote = try await onMetaService.getQuote(inrAmount: inrAmount)
+            AppLogger.log("✅ OnMeta: \(selectedFiatCurrency.format(fiatAmount)) → \(onMetaQuote.displayUsdtAmount)", category: "depositbuy")
+            
+            // Step 2: Get DEX quote (USDT → PAXG)
+            AppLogger.log("🔗 Step 2/2: Getting DEX quote...", category: "depositbuy")
+            let dexParams = DEXSwapService.SwapParams(
+                fromToken: .usdt,
+                toToken: .paxg,
+                amount: onMetaQuote.usdtAmount,
+                slippageTolerance: slippageTolerance,
+                fromAddress: walletAddress ?? ""
+            )
+            let dexQuote = try await dexSwapService.getQuote(params: dexParams)
+            AppLogger.log("✅ DEX: \(dexQuote.displayFromAmount) → \(dexQuote.displayToAmount)", category: "depositbuy")
+            
+            // Step 3: Combine into unified quote
+            let unified = UnifiedDepositQuote.from(
+                fiatCurrency: selectedFiatCurrency,
+                fiatAmount: fiatAmount,
+                onMetaQuote: onMetaQuote,
+                dexQuote: dexQuote
+            )
+            
+            unifiedQuote = unified
+            currentQuote = onMetaQuote  // Keep for compatibility
+            viewState = .quote
+            
+            AppLogger.log("🎉 Unified quote complete:", category: "depositbuy")
+            AppLogger.log("   Input: \(unified.displayFiatAmount)", category: "depositbuy")
+            AppLogger.log("   Output: \(unified.displayPaxgAmount)", category: "depositbuy")
+            AppLogger.log("   Effective rate: \(unified.displayEffectiveRate)", category: "depositbuy")
+            AppLogger.log("   Total fees: \(unified.displayTotalFees) (\(unified.displayFeePercentage))", category: "depositbuy")
+            
+        } catch {
+            viewState = .error(error.localizedDescription)
+            showError(error.localizedDescription)
+            AppLogger.log("❌ Unified quote failed: \(error.localizedDescription)", category: "depositbuy")
         }
     }
     

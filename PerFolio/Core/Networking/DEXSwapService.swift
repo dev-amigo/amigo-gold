@@ -32,6 +32,23 @@ final class DEXSwapService: ObservableObject {
         var isPriceImpactHigh: Bool {
             priceImpact > ServiceConstants.highPriceImpactThreshold
         }
+        
+        /// Convert estimated gas string to Decimal (e.g., "~$5-10" → 7.5)
+        var estimatedGasDecimal: Decimal {
+            // Parse "~$5-10" → average of 5 and 10 = 7.5
+            let cleaned = estimatedGas.replacingOccurrences(of: "~$", with: "").replacingOccurrences(of: "$", with: "")
+            let parts = cleaned.split(separator: "-").map { String($0).trimmingCharacters(in: .whitespaces) }
+            
+            if parts.count == 2,
+               let min = Decimal(string: parts[0]),
+               let max = Decimal(string: parts[1]) {
+                return (min + max) / 2
+            } else if let value = Decimal(string: cleaned) {
+                return value
+            }
+            
+            return 7.5  // Default fallback
+        }
     }
     
     struct Token {

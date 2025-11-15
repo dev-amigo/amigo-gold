@@ -19,15 +19,12 @@ struct DepositBuyView: View {
                     isExpanded: $isDepositExpanded
                 ) {
                     VStack(spacing: 16) {
-                        // OnMeta INR → USDT
-                        if viewModel.viewState == .quote {
-                            quoteCard
+                        // Unified Fiat → PAXG flow
+                        if viewModel.viewState == .quote, let unified = viewModel.unifiedQuote {
+                            unifiedQuoteCard(unified)
                         } else {
-                            buyWithINRCard
+                            buyFiatToPAXGCard
                         }
-                        
-                        // DEX Swap USDT → PAXG
-                        goldPurchaseCard
                         
                         // How It Works
                         howItWorksCard
@@ -137,15 +134,15 @@ struct DepositBuyView: View {
         }
     }
     
-    // MARK: - Buy Crypto with INR
+    // MARK: - Buy Gold with Fiat (Unified Flow)
     
-    private var buyWithINRCard: some View {
+    private var buyFiatToPAXGCard: some View {
         PerFolioCard {
             VStack(alignment: .leading, spacing: 20) {
                 PerFolioSectionHeader(
                     icon: "\(currencyIcon(for: viewModel.selectedFiatCurrency)).circle.fill",
-                    title: "Buy Crypto with \(viewModel.selectedFiatCurrency.rawValue)",
-                    subtitle: "Use UPI, bank transfer, or card to purchase USDT"
+                    title: "Buy Gold with \(viewModel.selectedFiatCurrency.rawValue)",
+                    subtitle: "One-click purchase: Fiat → USDT → PAXG"
                 )
                 
                 Divider()
@@ -174,10 +171,13 @@ struct DepositBuyView: View {
                 // Payment method selector
                 paymentMethodSelector
                 
-                // Get Quote button
-                PerFolioButton("GET QUOTE", isDisabled: viewModel.viewState == .processing) {
+                // Get Unified Quote button
+                PerFolioButton(
+                    viewModel.viewState == .processing ? "CALCULATING..." : "GET QUOTE",
+                    isDisabled: viewModel.viewState == .processing
+                ) {
                     Task {
-                        await viewModel.getQuote()
+                        await viewModel.getUnifiedDepositQuote()
                     }
                 }
                 
@@ -189,6 +189,182 @@ struct DepositBuyView: View {
             }
         }
     }
+    
+    // MARK: - Unified Quote Card (Fiat → PAXG)
+    
+    private func unifiedQuoteCard(_ quote: UnifiedDepositQuote) -> some View {
+        PerFolioCard {
+            VStack(alignment: .leading, spacing: 20) {
+                // Header with close button
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Gold Purchase Quote")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("Review and proceed to payment")
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Button {
+                        viewModel.resetOnMetaFlow()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                }
+                
+                Divider()
+                    .background(themeManager.perfolioTheme.border)
+                
+                // Main conversion display
+                HStack(alignment: .center, spacing: 16) {
+                    // You Pay
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("You Pay")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        Text(quote.displayFiatAmount)
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    }
+                    
+                    // Arrow
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    
+                    // You Receive (PAXG - highlighted)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("You Receive")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        Text(quote.displayPaxgAmount)
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    }
+                }
+                .padding(16)
+                .background(
+                    themeManager.perfolioTheme.goldenBoxGradient.opacity(0.1)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                
+                // Quote details
+                VStack(spacing: 12) {
+                    quoteDetailRow(
+                        label: "Effective Rate",
+                        value: quote.displayEffectiveRate,
+                        icon: "chart.line.uptrend.xyaxis"
+                    )
+                    quoteDetailRow(
+                        label: "Total Fees",
+                        value: "\(quote.displayTotalFees) (\(quote.displayFeePercentage))",
+                        icon: "dollarsign.circle"
+                    )
+                    quoteDetailRow(
+                        label: "Estimated Time",
+                        value: quote.estimatedTime,
+                        icon: "clock"
+                    )
+                }
+                
+                // Breakdown (collapsible)
+                DisclosureGroup("View Breakdown") {
+                    VStack(spacing: 12) {
+                        ForEach(quote.breakdown, id: \.number) { step in
+                            breakdownStepRow(step: step)
+                        }
+                    }
+                    .padding(.top, 12)
+                }
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                .tint(themeManager.perfolioTheme.tintColor)
+                
+                // Warnings (if any)
+                if !quote.warnings.isEmpty {
+                    ForEach(quote.warnings, id: \.self) { warning in
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(themeManager.perfolioTheme.warning)
+                            Text(warning)
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(themeManager.perfolioTheme.warning)
+                        }
+                        .padding(12)
+                        .background(themeManager.perfolioTheme.warning.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                }
+                
+                // Proceed button
+                PerFolioButton("PROCEED TO PAYMENT") {
+                    viewModel.proceedToPayment()
+                }
+                
+                // Info banner
+                PerFolioInfoBanner("You'll be redirected to \(quote.fiatCurrency.preferredProvider.name)'s secure payment page")
+            }
+        }
+    }
+    
+    private func quoteDetailRow(label: String, value: String, icon: String) -> some View {
+        HStack {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    .frame(width: 20)
+                Text(label)
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+            }
+            Spacer()
+            Text(value)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+        }
+    }
+    
+    private func breakdownStepRow(step: UnifiedDepositQuote.BreakdownStep) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                // Step number
+                Text(step.number)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(width: 24, height: 24)
+                    .background(Circle().fill(themeManager.perfolioTheme.tintColor))
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(step.title)
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    Text(step.description)
+                        .font(.system(size: 13, weight: .regular, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+                
+                Spacer()
+            }
+            
+            HStack {
+                Text("Fee: \(step.fee)")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                Spacer()
+                Text(step.provider)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.tintColor)
+            }
+            .padding(.leading, 32)
+        }
+    }
+    
+    // MARK: - Legacy Quote Card (for OnMeta only)
     
     private var quoteCard: some View {
         PerFolioCard {
