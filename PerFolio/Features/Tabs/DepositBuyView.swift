@@ -5,6 +5,7 @@ struct DepositBuyView: View {
     @StateObject private var viewModel = DepositBuyViewModel()
     @State private var isDepositExpanded = false
     @State private var isWithdrawExpanded = false
+    @State private var isSwapExpanded = false
     
     var body: some View {
         ScrollView {
@@ -18,17 +19,7 @@ struct DepositBuyView: View {
                     subtitle: "Buy gold with fiat currency",
                     isExpanded: $isDepositExpanded
                 ) {
-                    VStack(spacing: 16) {
-                        // Unified Fiat → PAXG flow
-                        if viewModel.viewState == .quote, let unified = viewModel.unifiedQuote {
-                            unifiedQuoteCard(unified)
-                        } else {
-                            buyFiatToPAXGCard
-                        }
-                        
-                        // How It Works
-                        howItWorksCard
-                    }
+                    depositContent
                 }
                 
                 // Expandable Section 2: Withdraw (PAXG → Fiat)
@@ -39,6 +30,16 @@ struct DepositBuyView: View {
                     isExpanded: $isWithdrawExpanded
                 ) {
                     withdrawPlaceholder
+                }
+                
+                // Expandable Section 3: Swap (USDT → PAXG)
+                ExpandableSection(
+                    icon: "arrow.2.squarepath",
+                    title: "Swap",
+                    subtitle: "Convert USDT to PAXG",
+                    isExpanded: $isSwapExpanded
+                ) {
+                    swapContent
                 }
             }
             .padding(.horizontal, 20)
@@ -74,6 +75,29 @@ struct DepositBuyView: View {
                 .foregroundStyle(themeManager.perfolioTheme.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    // MARK: - Section Content
+    
+    private var depositContent: some View {
+        VStack(spacing: 16) {
+            // Unified Fiat → PAXG flow
+            if viewModel.viewState == .quote, let unified = viewModel.unifiedQuote {
+                unifiedQuoteCard(unified)
+            } else {
+                buyFiatToPAXGCard
+            }
+            
+            // How It Works
+            howItWorksCard
+        }
+    }
+    
+    private var swapContent: some View {
+        VStack(spacing: 16) {
+            // USDT → PAXG swap (for existing USDT holders)
+            goldPurchaseCard
+        }
     }
     
     // MARK: - Withdraw Placeholder
@@ -142,7 +166,7 @@ struct DepositBuyView: View {
                 PerFolioSectionHeader(
                     icon: "\(currencyIcon(for: viewModel.selectedFiatCurrency)).circle.fill",
                     title: "Buy Gold with \(viewModel.selectedFiatCurrency.rawValue)",
-                    subtitle: "One-click purchase: Fiat → USDT → PAXG"
+                    subtitle: "Buy tokenized gold with your local currency"
                 )
                 
                 Divider()
@@ -181,11 +205,24 @@ struct DepositBuyView: View {
                     }
                 }
                 
-                // Info banner with dynamic limits
-                PerFolioInfoBanner(
-                    "Min: \(viewModel.selectedFiatCurrency.format(viewModel.selectedFiatCurrency.minDepositAmount)) • " +
-                    "Max: \(viewModel.selectedFiatCurrency.format(viewModel.selectedFiatCurrency.maxDepositAmount))"
-                )
+                // Info banner with dynamic limits and provider
+                VStack(spacing: 8) {
+                    PerFolioInfoBanner(
+                        "Min: \(viewModel.selectedFiatCurrency.format(viewModel.selectedFiatCurrency.minDepositAmount)) • " +
+                        "Max: \(viewModel.selectedFiatCurrency.format(viewModel.selectedFiatCurrency.maxDepositAmount))"
+                    )
+                    
+                    // Powered by branding
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.shield.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        Text("Powered by \(viewModel.selectedFiatCurrency.preferredProvider.name)")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
             }
         }
     }
@@ -476,15 +513,15 @@ struct DepositBuyView: View {
         }
     }
     
-    // MARK: - Gold Purchase Module
+    // MARK: - Swap Module (USDT → PAXG)
     
     private var goldPurchaseCard: some View {
         PerFolioCard {
             VStack(alignment: .leading, spacing: 16) {
                 PerFolioSectionHeader(
-                    icon: "circle.grid.cross.fill",
-                    title: "Buy Gold (PAXG)",
-                    subtitle: "Convert your USDT to tokenized gold"
+                    icon: "arrow.2.squarepath",
+                    title: "Swap USDT to PAXG",
+                    subtitle: "Convert your stablecoins to tokenized gold"
                 )
                 
                 Divider()
@@ -555,10 +592,23 @@ struct DepositBuyView: View {
                 // Swap button with state
                 swapButton
                 
-                // Info banner
-                PerFolioInfoBanner(
-                    "Gold purchases are instant and backed 1:1 by physical gold"
-                )
+                // Info banner with provider branding
+                VStack(spacing: 8) {
+                    PerFolioInfoBanner(
+                        "Swaps are instant and backed 1:1 by physical gold"
+                    )
+                    
+                    // Powered by branding
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.triangle.swap")
+                            .font(.system(size: 12))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        Text("Powered by 1inch DEX")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                }
             }
         }
     }
