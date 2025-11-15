@@ -81,11 +81,11 @@ struct DepositBuyView: View {
     
     private var depositContent: some View {
         VStack(spacing: 16) {
-            // Unified Fiat → PAXG flow
-            if viewModel.viewState == .quote, let unified = viewModel.unifiedQuote {
-                unifiedQuoteCard(unified)
+            // Simple Fiat → USDT flow
+            if viewModel.viewState == .quote, let quote = viewModel.currentQuote {
+                simpleUSDTQuoteCard(quote)
             } else {
-                buyFiatToPAXGCard
+                buyFiatToUSDTCard
             }
             
             // How It Works
@@ -160,13 +160,13 @@ struct DepositBuyView: View {
     
     // MARK: - Buy Gold with Fiat (Unified Flow)
     
-    private var buyFiatToPAXGCard: some View {
+    private var buyFiatToUSDTCard: some View {
         PerFolioCard {
             VStack(alignment: .leading, spacing: 20) {
                 PerFolioSectionHeader(
                     icon: "\(currencyIcon(for: viewModel.selectedFiatCurrency)).circle.fill",
-                    title: "Buy Gold with \(viewModel.selectedFiatCurrency.rawValue)",
-                    subtitle: "Buy tokenized gold with your local currency"
+                    title: "Deposit with \(viewModel.selectedFiatCurrency.rawValue)",
+                    subtitle: "Buy USDT with your local currency"
                 )
                 
                 Divider()
@@ -181,9 +181,6 @@ struct DepositBuyView: View {
                     CurrencyPicker(selectedCurrency: $viewModel.selectedFiatCurrency)
                 }
                 
-                // Crypto selector (locked to USDT)
-                lockedSelector(icon: "dollarsign.circle.fill", label: "Crypto", value: "USDT")
-                
                 // Amount input with dynamic presets
                 PerFolioInputField(
                     label: "Amount",
@@ -195,13 +192,13 @@ struct DepositBuyView: View {
                 // Payment method selector
                 paymentMethodSelector
                 
-                // Get Unified Quote button
+                // Get Quote button
                 PerFolioButton(
                     viewModel.viewState == .processing ? "CALCULATING..." : "GET QUOTE",
                     isDisabled: viewModel.viewState == .processing
                 ) {
                     Task {
-                        await viewModel.getUnifiedDepositQuote()
+                        await viewModel.getQuote()
                     }
                 }
                 
@@ -227,7 +224,123 @@ struct DepositBuyView: View {
         }
     }
     
-    // MARK: - Unified Quote Card (Fiat → PAXG)
+    // MARK: - Simple USDT Quote Card (Fiat → USDT)
+    
+    private func simpleUSDTQuoteCard(_ quote: OnMetaService.Quote) -> some View {
+        PerFolioCard {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Deposit Quote")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("Review and proceed to payment")
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Button {
+                        viewModel.resetOnMetaFlow()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                            .font(.system(size: 24))
+                    }
+                }
+                
+                Divider()
+                    .background(themeManager.perfolioTheme.border)
+                
+                // You'll receive - Big USDT number
+                VStack(spacing: 8) {
+                    Text("You'll Receive")
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(CurrencyFormatter.formatDecimal(quote.usdtAmount))
+                            .font(.system(size: 40, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("USDT")
+                            .font(.system(size: 24, weight: .semibold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text("≈ \(quote.displayInrAmount)")
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(16)
+                .background(themeManager.perfolioTheme.buttonBackground.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                
+                Divider()
+                    .background(themeManager.perfolioTheme.border)
+                
+                // Quote details
+                VStack(spacing: 12) {
+                    simpleQuoteRow(label: "Exchange Rate", value: quote.displayRate, icon: "chart.line.uptrend.xyaxis")
+                    simpleQuoteRow(label: "Provider Fee", value: quote.displayFee, icon: "creditcard")
+                    simpleQuoteRow(label: "You Pay", value: quote.displayInrAmount, icon: "dollarsign.circle.fill")
+                }
+                
+                // Estimated time
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.fill")
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    Text("Estimated Time: \(quote.estimatedTime)")
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+                .padding(12)
+                .background(themeManager.perfolioTheme.secondaryBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                
+                // Proceed button
+                PerFolioButton("PROCEED TO PAYMENT") {
+                    viewModel.proceedToPayment()
+                }
+                
+                // Info banner
+                PerFolioInfoBanner("You'll be redirected to \(viewModel.selectedFiatCurrency.preferredProvider.name)'s secure payment page")
+                
+                // Branding
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.shield.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    Text("Powered by \(viewModel.selectedFiatCurrency.preferredProvider.name)")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+        }
+    }
+    
+    private func simpleQuoteRow(label: String, value: String, icon: String) -> some View {
+        HStack {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    .frame(width: 20)
+                Text(label)
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+            }
+            Spacer()
+            Text(value)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+        }
+    }
+    
+    // MARK: - Unified Quote Card (DEPRECATED - Saved for Phase 4)
     
     private func unifiedQuoteCard(_ quote: UnifiedDepositQuote) -> some View {
         PerFolioCard {
