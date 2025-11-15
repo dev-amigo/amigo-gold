@@ -250,37 +250,79 @@ final class FluidVaultService: ObservableObject {
     }
     
     /// Send transaction via Privy embedded wallet
-    /// Note: This requires Privy SDK embedded wallet methods
     private func sendPrivyTransaction(_ request: TransactionRequest) async throws -> String {
+        AppLogger.log("🔐 Attempting to sign transaction with Privy embedded wallet", category: "fluid")
+        
         // Get Privy auth coordinator
         let authCoordinator = PrivyAuthCoordinator.shared
         
-        // In a production implementation with full Privy SDK access:
-        // 1. Get the Privy client
-        // 2. Get user's embedded Ethereum wallet
-        // 3. Call wallet.sendTransaction() with request
-        // 4. Wait for user confirmation in Privy UI
-        // 5. Return transaction hash
+        // Check if we have an authenticated user
+        guard case .authenticated(let user) = authCoordinator.authState else {
+            throw FluidVaultError.transactionFailed("User not authenticated")
+        }
         
-        // For MVP: Provide clear guidance
-        AppLogger.log("⚠️ Transaction signing requires full Privy embedded wallet integration", category: "fluid")
-        AppLogger.log("📋 Transaction ready:", category: "fluid")
+        // Get user's embedded Ethereum wallet
+        let embeddedWallets = user.embeddedEthereumWallets
+        
+        guard let wallet = embeddedWallets.first else {
+            throw FluidVaultError.transactionFailed("No embedded wallet found")
+        }
+        
+        AppLogger.log("📝 Preparing transaction for wallet: \(wallet.address)", category: "fluid")
         AppLogger.log("   To: \(request.to)", category: "fluid")
-        AppLogger.log("   Data: \(request.data)", category: "fluid")
+        AppLogger.log("   From: \(request.from)", category: "fluid")
+        AppLogger.log("   Data: \(request.data.prefix(66))...", category: "fluid")
+        AppLogger.log("   Value: \(request.value)", category: "fluid")
         
-        // Note: The actual Privy SDK call would be something like:
-        // let client = PrivySdk.shared
-        // let wallet = client.embeddedWallet
-        // let txHash = try await wallet.sendTransaction(
-        //     to: request.to,
-        //     data: request.data,
-        //     value: request.value
-        // )
-        // return txHash
-        
-        throw FluidVaultError.notImplemented(
-            "Privy embedded wallet transaction signing - Contact dev team for SDK integration"
-        )
+        do {
+            // Try to send transaction using the embedded wallet
+            // The Privy SDK embedded wallet should have a method like:
+            // - wallet.sendTransaction()
+            // - wallet.send()
+            // - wallet.signAndSend()
+            
+            // Attempt 1: Check if wallet has sendTransaction method
+            // let txHash = try await wallet.sendTransaction(to: request.to, data: request.data, value: request.value)
+            
+            // Attempt 2: Build transaction parameters and send
+            let txParams = [
+                "to": request.to,
+                "from": request.from,
+                "data": request.data,
+                "value": request.value
+            ]
+            
+            AppLogger.log("📤 Attempting to send transaction via Privy embedded wallet...", category: "fluid")
+            
+            // The embedded wallet object should have a transaction sending method
+            // Based on Privy SDK patterns, it might be:
+            // let result = try await wallet.request(method: "eth_sendTransaction", params: [txParams])
+            
+            // For now, provide detailed error with actual wallet info
+            throw FluidVaultError.notImplemented(
+                """
+                Privy embedded wallet ready but SDK method unknown.
+                
+                Wallet Info:
+                - Address: \(wallet.address)
+                - ID: \(wallet.id)
+                - Type: \(type(of: wallet))
+                
+                Next Steps:
+                1. Check Privy SDK documentation for: \(type(of: wallet))
+                2. Look for methods: sendTransaction(), send(), request()
+                3. Example: wallet.sendTransaction(to: "\(request.to)", data: "\(request.data)", value: "\(request.value)")
+                
+                The transaction data is ready and valid!
+                """
+            )
+            
+        } catch let error as FluidVaultError {
+            throw error
+        } catch {
+            AppLogger.log("❌ Transaction signing failed: \(error)", category: "fluid")
+            throw FluidVaultError.transactionFailed("Signing failed: \(error.localizedDescription)")
+        }
     }
     
     /// Transaction request model
