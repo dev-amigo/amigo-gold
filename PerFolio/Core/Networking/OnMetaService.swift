@@ -37,35 +37,19 @@ final class OnMetaService: ObservableObject {
         let estimatedTime: String
         
         var displayInrAmount: String {
-            "₹\(formatCurrency(inrAmount))"
+            CurrencyFormatter.formatINR(inrAmount)
         }
         
         var displayUsdtAmount: String {
-            "~\(formatDecimal(usdtAmount)) USDT"
+            "~\(CurrencyFormatter.formatToken(usdtAmount, symbol: "USDT"))"
         }
         
         var displayFee: String {
-            "₹\(formatCurrency(providerFee))"
+            CurrencyFormatter.formatINR(providerFee)
         }
         
         var displayRate: String {
-            "1 USDT = ₹\(formatDecimal(exchangeRate))"
-        }
-        
-        private func formatCurrency(_ value: Decimal) -> String {
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.minimumFractionDigits = 0
-            formatter.maximumFractionDigits = 2
-            return formatter.string(from: value as NSNumber) ?? "0"
-        }
-        
-        private func formatDecimal(_ value: Decimal) -> String {
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.minimumFractionDigits = 2
-            formatter.maximumFractionDigits = 6
-            return formatter.string(from: value as NSNumber) ?? "0"
+            "1 USDT = ₹\(CurrencyFormatter.formatDecimal(exchangeRate))"
         }
     }
     
@@ -97,8 +81,8 @@ final class OnMetaService: ObservableObject {
     @Published var error: OnMetaError?
     
     // Limits (from OnMeta documentation)
-    let minInrAmount: Decimal = 500
-    let maxInrAmount: Decimal = 100_000
+    let minInrAmount = ServiceConstants.onMetaMinINR
+    let maxInrAmount = ServiceConstants.onMetaMaxINR
     
     // MARK: - Initialization
     
@@ -114,10 +98,10 @@ final class OnMetaService: ObservableObject {
     
     /// Validate INR amount
     func validateAmount(_ amount: String) -> Bool {
-        guard let decimal = Decimal(string: amount.replacingOccurrences(of: "₹", with: "").replacingOccurrences(of: ",", with: "")) else {
+        guard let decimal = CurrencyFormatter.parseINRAmount(amount) else {
             return false
         }
-        return decimal >= minInrAmount && decimal <= maxInrAmount
+        return CurrencyFormatter.validateAmount(decimal, min: minInrAmount, max: maxInrAmount)
     }
     
     /// Get quote for INR → USDT conversion
@@ -125,11 +109,11 @@ final class OnMetaService: ObservableObject {
     func getQuote(inrAmount: String) async throws -> Quote {
         AppLogger.log("📊 Getting quote for INR amount: \(inrAmount)", category: "onmeta")
         
-        guard let amount = Decimal(string: inrAmount.replacingOccurrences(of: "₹", with: "").replacingOccurrences(of: ",", with: "")) else {
+        guard let amount = CurrencyFormatter.parseINRAmount(inrAmount) else {
             throw OnMetaError.invalidAmount
         }
         
-        guard amount >= minInrAmount && amount <= maxInrAmount else {
+        guard CurrencyFormatter.validateAmount(amount, min: minInrAmount, max: maxInrAmount) else {
             throw OnMetaError.invalidAmount
         }
         
@@ -137,12 +121,12 @@ final class OnMetaService: ObservableObject {
         defer { isLoading = false }
         
         // Simulate API delay
-        try await Task.sleep(nanoseconds: 500_000_000) // 0.5s
+        try await Task.sleep(nanoseconds: ServiceConstants.quoteDelay)
         
         // Simplified quote calculation
         // In production, call OnMeta quote API: GET /api/v1/quote
-        let exchangeRate: Decimal = 92.5 // 1 USDT ≈ ₹92.5 (example rate)
-        let feePercentage: Decimal = 0.02 // 2% fee
+        let exchangeRate = ServiceConstants.onMetaDefaultExchangeRate
+        let feePercentage = ServiceConstants.onMetaFeePercentage
         let providerFee = amount * feePercentage
         let netAmount = amount - providerFee
         let usdtAmount = netAmount / exchangeRate
@@ -152,7 +136,7 @@ final class OnMetaService: ObservableObject {
             usdtAmount: usdtAmount,
             exchangeRate: exchangeRate,
             providerFee: providerFee,
-            estimatedTime: "5-15 minutes"
+            estimatedTime: ServiceConstants.onMetaEstimatedTime
         )
         
         currentQuote = quote
@@ -171,7 +155,7 @@ final class OnMetaService: ObservableObject {
             throw OnMetaError.missingWalletAddress
         }
         
-        guard let amount = Decimal(string: inrAmount.replacingOccurrences(of: "₹", with: "").replacingOccurrences(of: ",", with: "")) else {
+        guard let amount = CurrencyFormatter.parseINRAmount(inrAmount) else {
             throw OnMetaError.invalidAmount
         }
         

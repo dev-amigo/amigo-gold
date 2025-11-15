@@ -196,7 +196,7 @@ final class DepositBuyViewModel: ObservableObject {
             let approvalState = try await dexSwapService.checkApproval(
                 tokenAddress: DEXSwapService.Token.usdt.address,
                 ownerAddress: walletAddress,
-                spenderAddress: "0x111111125421ca6dc452d289314280a0f8842a65", // 1inch router
+                spenderAddress: ContractAddresses.oneInchRouterV6,
                 amount: amount
             )
             
@@ -228,7 +228,7 @@ final class DepositBuyViewModel: ObservableObject {
         do {
             try await dexSwapService.approveToken(
                 tokenAddress: DEXSwapService.Token.usdt.address,
-                spenderAddress: "0x111111125421ca6dc452d289314280a0f8842a65",
+                spenderAddress: ContractAddresses.oneInchRouterV6,
                 amount: amount
             )
             AppLogger.log("✅ USDT approved for swap", category: "depositbuy")
@@ -270,7 +270,7 @@ final class DepositBuyViewModel: ObservableObject {
             AppLogger.log("✅ Swap executed: \(txHash)", category: "depositbuy")
             
             // Refresh balances
-            try? await Task.sleep(nanoseconds: 3_000_000_000) // Wait 3s for confirmation
+            try? await Task.sleep(nanoseconds: ServiceConstants.balanceRefreshDelay)
             await loadBalances()
         } catch {
             swapState = .error(error.localizedDescription)
@@ -309,7 +309,7 @@ final class DepositBuyViewModel: ObservableObject {
     func fetchGoldPrice() async {
         // In production, fetch from CoinGecko or price oracle
         // For now, use a static price
-        goldPrice = 2000 // $2000/oz
+        goldPrice = ServiceConstants.goldPriceUSDT
         AppLogger.log("💰 Gold price: $\(goldPrice)", category: "depositbuy")
     }
     
@@ -344,12 +344,7 @@ final class DepositBuyViewModel: ObservableObject {
     }
     
     var formattedGoldPrice: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = "USD"
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        return formatter.string(from: goldPrice as NSNumber) ?? "$0.00"
+        CurrencyFormatter.formatUSD(goldPrice)
     }
     
     var estimatedPAXGAmount: String {

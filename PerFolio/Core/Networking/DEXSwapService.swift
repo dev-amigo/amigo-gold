@@ -18,27 +18,19 @@ final class DEXSwapService: ObservableObject {
         let route: String
         
         var displayFromAmount: String {
-            "\(formatDecimal(fromAmount)) \(fromToken.symbol)"
+            CurrencyFormatter.formatToken(fromAmount, symbol: fromToken.symbol)
         }
         
         var displayToAmount: String {
-            "\(formatDecimal(toAmount)) \(toToken.symbol)"
+            CurrencyFormatter.formatToken(toAmount, symbol: toToken.symbol, maxDecimals: 8)
         }
         
         var displayPriceImpact: String {
-            "\(formatDecimal(priceImpact))%"
+            "\(CurrencyFormatter.formatDecimal(priceImpact))%"
         }
         
         var isPriceImpactHigh: Bool {
-            priceImpact > 3.0 // > 3% is considered high
-        }
-        
-        private func formatDecimal(_ value: Decimal) -> String {
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.minimumFractionDigits = 2
-            formatter.maximumFractionDigits = 6
-            return formatter.string(from: value as NSNumber) ?? "0"
+            priceImpact > ServiceConstants.highPriceImpactThreshold
         }
     }
     
@@ -49,14 +41,14 @@ final class DEXSwapService: ObservableObject {
         let name: String
         
         static let usdt = Token(
-            address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+            address: ContractAddresses.usdt,
             symbol: "USDT",
             decimals: 6,
             name: "Tether USD"
         )
         
         static let paxg = Token(
-            address: "0x45804880De22913dAFE09f4980848ECE6EcbAf78",
+            address: ContractAddresses.paxg,
             symbol: "PAXG",
             decimals: 18,
             name: "Paxos Gold"
@@ -118,7 +110,7 @@ final class DEXSwapService: ObservableObject {
     private let oneInchAPIKey: String
     
     // Slippage tolerance (0.5% default)
-    let defaultSlippageTolerance: Decimal = 0.5
+    let defaultSlippageTolerance = ServiceConstants.defaultSlippageTolerance
     
     // MARK: - Initialization
     
@@ -163,7 +155,7 @@ final class DEXSwapService: ObservableObject {
         // In production, call 1inch API for real quote
         // For now, use simplified calculation based on approximate prices
         // USDT ≈ $1, PAXG ≈ $2000 (1 oz gold)
-        let paxgPriceInUSDT: Decimal = 2000
+        let paxgPriceInUSDT = ServiceConstants.goldPriceUSDT
         let toAmount = params.amount / paxgPriceInUSDT
         let priceImpact: Decimal = 0.1 // 0.1% for demo
         
@@ -172,9 +164,9 @@ final class DEXSwapService: ObservableObject {
             toToken: params.toToken,
             fromAmount: params.amount,
             toAmount: toAmount,
-            estimatedGas: "~$5-10",
+            estimatedGas: ServiceConstants.estimatedGasCost,
             priceImpact: priceImpact,
-            route: "USDT → WETH → PAXG (Uniswap V3)"
+            route: ServiceConstants.defaultSwapRoute
         )
         
         currentQuote = quote
@@ -205,13 +197,13 @@ final class DEXSwapService: ObservableObject {
             throw SwapError.networkError("Invalid allowance response")
         }
         
-        // Parse hex allowance
-        let allowanceHex = resultString.replacingOccurrences(of: "0x", with: "")
-        // Convert hex string to integer first, then to Decimal
-        guard let allowanceInt = Int(allowanceHex, radix: 16) else {
-            throw SwapError.networkError("Failed to parse allowance")
+        // Parse hex allowance using safe parser for large numbers
+        let allowanceValue: Decimal
+        do {
+            allowanceValue = try HexParser.parseToDecimal(resultString)
+        } catch {
+            throw SwapError.networkError("Failed to parse allowance: \(error.localizedDescription)")
         }
-        let allowanceValue = Decimal(allowanceInt)
         
         let state: ApprovalState = allowanceValue >= amount ? .approved : .required
         AppLogger.log("   Allowance: \(allowanceValue), Required: \(amount), State: \(state)", category: "dex")
@@ -233,7 +225,7 @@ final class DEXSwapService: ObservableObject {
         
         // In production, build approval transaction data and use Privy to sign/send
         // For now, simulate approval
-        try await Task.sleep(nanoseconds: 2_000_000_000) // 2s delay
+        try await Task.sleep(nanoseconds: ServiceConstants.approvalDelay)
         
         approvalState = .approved
         AppLogger.log("✅ Token approval successful", category: "dex")
@@ -245,7 +237,7 @@ final class DEXSwapService: ObservableObject {
         AppLogger.log("🔄 Executing swap: \(params.amount) \(params.fromToken.symbol) → \(params.toToken.symbol)", category: "dex")
         
         // Check approval first
-        let oneInchRouter = "0x111111125421ca6dc452d289314280a0f8842a65" // 1inch v6 router
+        let oneInchRouter = ContractAddresses.oneInchRouterV6
         let approvalState = try await checkApproval(
             tokenAddress: params.fromToken.address,
             ownerAddress: params.fromAddress,
@@ -266,7 +258,7 @@ final class DEXSwapService: ObservableObject {
         // 3. Return transaction hash
         
         // For now, simulate transaction
-        try await Task.sleep(nanoseconds: 3_000_000_000) // 3s delay
+        try await Task.sleep(nanoseconds: ServiceConstants.swapDelay)
         
         let txHash = "0x" + UUID().uuidString.replacingOccurrences(of: "-", with: "")
         AppLogger.log("✅ Swap executed: \(txHash)", category: "dex")
