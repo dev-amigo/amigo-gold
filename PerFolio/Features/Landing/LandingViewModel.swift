@@ -73,9 +73,11 @@ final class LandingViewModel: ObservableObject {
                 
                 // Extract embedded wallet from Privy user
                 // Get embedded Ethereum wallets from Privy SDK
-                var embeddedWallets = user.embeddedEthereumWallets
+                // Refresh the user so embedded wallets are hydrated before we read them
+                try await user.refresh()
                 
-                AppLogger.log("Found \(embeddedWallets.count) embedded Ethereum wallets", category: "auth")
+                var embeddedWallets = user.embeddedEthereumWallets
+                AppLogger.log("Found \(embeddedWallets.count) embedded Ethereum wallets after refresh", category: "auth")
                 
                 // If no embedded wallet, attempt to create one instead of using a hardcoded fallback
                 if embeddedWallets.isEmpty {

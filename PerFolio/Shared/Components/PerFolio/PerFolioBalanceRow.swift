@@ -58,7 +58,7 @@ struct PerFolioBalanceRow: View {
         )
         
         PerFolioBalanceRow(
-            tokenSymbol: "USDT",
+            tokenSymbol: "USDC",
             tokenAmount: "0.00",
             usdValue: "$0.00",
             isLoading: true
@@ -68,4 +68,3 @@ struct PerFolioBalanceRow: View {
     .background(Color(hex: "242424"))
     .environmentObject(ThemeManager())
 }
-

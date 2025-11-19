@@ -58,8 +58,8 @@ final class VaultConfigService: ObservableObject {
         
         do {
             // Encode getVaultEntireData(address vault) call
-            // Function selector: First 4 bytes of keccak256("getVaultEntireData(address)")
-            let functionSelector = "0x9f7b45e2"
+            // Function selector: First 4 bytes of keccak256("getVaultEntireData(address)") = 0xa78dc875
+            let functionSelector = "0xa78dc875"
             
             // Pad vault address to 32 bytes
             let cleanAddress = vaultAddress.replacingOccurrences(of: "0x", with: "")
@@ -174,4 +174,3 @@ enum VaultConfigError: LocalizedError {
         }
     }
 }
-

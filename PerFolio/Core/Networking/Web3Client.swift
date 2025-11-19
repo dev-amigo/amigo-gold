@@ -113,6 +113,8 @@ actor Web3Client {
     ) {
         // Get RPC URLs from configuration
         let privyRPC = Bundle.main.object(forInfoDictionaryKey: "AGPrivyRPCURL") as? String ?? ""
+        let configuredPrimary = Bundle.main.object(forInfoDictionaryKey: "AGEthereumRPCPrimary") as? String ?? ""
+        let viteAlchemyKey = Bundle.main.object(forInfoDictionaryKey: "VITE_ALCHEMY_API_KEY") as? String ?? ""
         let configuredFallback = Bundle.main.object(forInfoDictionaryKey: "AGEthereumRPCFallback") as? String ?? ""
         let defaultFallback = "https://ethereum.publicnode.com"
         
@@ -120,7 +122,17 @@ actor Web3Client {
         // Privy RPC attempted but not available for general JSON-RPC
         let llamaRPC = "https://eth.llamarpc.com"
         
-        self.primaryRPC = primaryRPC ?? llamaRPC
+        // Build primary: explicit override > configured primary > derived from VITE_ALCHEMY_API_KEY > llamaRPC
+        let derivedAlchemy = viteAlchemyKey.isEmpty
+            ? ""
+            : (viteAlchemyKey.starts(with: "http")
+                ? viteAlchemyKey
+                : "https://eth-mainnet.g.alchemy.com/v2/\(viteAlchemyKey)")
+        
+        self.primaryRPC = primaryRPC
+            ?? (!configuredPrimary.isEmpty ? configuredPrimary : nil)
+            ?? (!derivedAlchemy.isEmpty ? derivedAlchemy : nil)
+            ?? llamaRPC
         self.fallbackRPC = fallbackRPC ?? (!configuredFallback.isEmpty ? configuredFallback : defaultFallback)
         self.session = session
         
@@ -219,4 +231,3 @@ actor Web3Client {
         return result
     }
 }
-

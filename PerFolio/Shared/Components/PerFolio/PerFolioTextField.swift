@@ -53,7 +53,7 @@ struct PerFolioTextField: View {
         PerFolioTextField(
             placeholder: "0.00",
             text: .constant(""),
-            trailingText: "USDT",
+            trailingText: "USDC",
             keyboardType: .decimalPad
         )
         
@@ -67,4 +67,3 @@ struct PerFolioTextField: View {
     .background(Color(hex: "242424"))
     .environmentObject(ThemeManager())
 }
-

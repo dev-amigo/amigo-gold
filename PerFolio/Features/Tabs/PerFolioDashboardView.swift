@@ -243,9 +243,9 @@ struct PerFolioDashboardView: View {
                 )
                 
                 PerFolioBalanceRow(
-                    tokenSymbol: "USDT",
-                    tokenAmount: viewModel.usdtFormattedBalance,
-                    usdValue: viewModel.usdtUSDValue
+                    tokenSymbol: "USDC",
+                    tokenAmount: viewModel.usdcFormattedBalance,
+                    usdValue: viewModel.usdcUSDValue
                 )
                 
                 if case .failed(let error) = viewModel.loadingState {

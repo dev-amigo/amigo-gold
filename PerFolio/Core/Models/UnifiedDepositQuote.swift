@@ -1,21 +1,21 @@
 import Foundation
 
-/// Unified deposit quote that chains Fiat → USDT → PAXG
+/// Unified deposit quote that chains Fiat → USDC → PAXG
 /// Combines OnMeta (on-ramp) quote with DEX swap quote for seamless UX
 struct UnifiedDepositQuote {
     // MARK: - Input
     let fiatCurrency: FiatCurrency
     let fiatAmount: Decimal
     
-    // MARK: - Step 1: Fiat → USDT (OnMeta)
-    let usdtAmount: Decimal
+    // MARK: - Step 1: Fiat → USDC (OnMeta)
+    let usdcAmount: Decimal
     let onMetaFee: Decimal
-    let exchangeRate: Decimal  // Fiat to USDT rate
+    let exchangeRate: Decimal  // Fiat to USDC rate
     
-    // MARK: - Step 2: USDT → PAXG (DEX Swap)
+    // MARK: - Step 2: USDC → PAXG (DEX Swap)
     let paxgAmount: Decimal
-    let goldPrice: Decimal     // USDT per PAXG
-    let swapFee: Decimal       // Gas cost in USDT
+    let goldPrice: Decimal     // USDC per PAXG
+    let swapFee: Decimal       // Gas cost in USDC
     let priceImpact: Decimal   // Percentage
     let swapRoute: String
     
@@ -31,9 +31,9 @@ struct UnifiedDepositQuote {
         fiatCurrency.format(fiatAmount)
     }
     
-    /// Display USDT intermediate amount
+    /// Display USDC intermediate amount
     var displayUsdtAmount: String {
-        CurrencyFormatter.formatToken(usdtAmount, symbol: "USDT", maxDecimals: 2)
+        CurrencyFormatter.formatToken(usdcAmount, symbol: "USDC", maxDecimals: 2)
     }
     
     /// Display final PAXG output amount (highlighted)
@@ -69,9 +69,9 @@ struct UnifiedDepositQuote {
         "\(fiatCurrency.format(effectiveRate)) per PAXG"
     }
     
-    /// Display exchange rate (fiat to USDT)
+    /// Display exchange rate (fiat to USDC)
     var displayExchangeRate: String {
-        "1 USDT ≈ \(fiatCurrency.format(exchangeRate))"
+        "1 USDC ≈ \(fiatCurrency.format(exchangeRate))"
     }
     
     /// Display gold price
@@ -95,7 +95,7 @@ struct UnifiedDepositQuote {
         [
             BreakdownStep(
                 number: "1",
-                title: "Buy USDT",
+                title: "Buy USDC",
                 description: "\(displayFiatAmount) → \(displayUsdtAmount)",
                 fee: displayOnMetaFee,
                 provider: fiatCurrency.preferredProvider.name
@@ -105,7 +105,7 @@ struct UnifiedDepositQuote {
                 title: "Swap to PAXG",
                 description: "\(displayUsdtAmount) → \(displayPaxgAmount)",
                 fee: displaySwapFee,
-                provider: "1inch DEX"
+                provider: "0x Swap"
             )
         ]
     }
@@ -157,7 +157,7 @@ extension UnifiedDepositQuote {
         return UnifiedDepositQuote(
             fiatCurrency: fiatCurrency,
             fiatAmount: fiatAmount,
-            usdtAmount: onMetaQuote.usdtAmount,
+            usdcAmount: onMetaQuote.usdcAmount,
             onMetaFee: onMetaQuote.providerFee,
             exchangeRate: onMetaQuote.exchangeRate,
             paxgAmount: dexQuote.toAmount,
@@ -178,7 +178,7 @@ extension UnifiedDepositQuote {
     /// Validate quote is within acceptable limits
     var isValid: Bool {
         return fiatAmount > 0 &&
-               usdtAmount > 0 &&
+               usdcAmount > 0 &&
                paxgAmount > 0 &&
                !isPriceImpactHigh
     }
@@ -198,4 +198,3 @@ extension UnifiedDepositQuote {
         return warnings
     }
 }
-

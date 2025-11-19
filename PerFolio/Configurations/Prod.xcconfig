@@ -8,8 +8,14 @@ DEEP_LINK_SCHEME = perfolio
 DEFAULT_OAUTH_PROVIDER = email
 
 // OnMeta Configuration (INR on-ramp)
-ONMETA_API_KEY = your_onmeta_api_key_here
+ONMETA_API_KEY = 3adc6318-8e68-41b8-8d39-dcb354eb25ce
+TRANSAK_API_KEY = 4f4d1fff-3bba-4749-aa07-11d0667adbf4
+ZEROX_SWAP_KEY = 500e6659-f085-4d26-9fb4-933eea6d7170
+VITE_ALCHEMY_API_KEY = 7_GAP2fRALM9SC2gQo8qf
+
 ONMETA_BASE_URL = https:/$()/platform.onmeta.in
 
-// 1inch DEX Configuration (for USDT→PAXG swaps)
+ALCHEMY_RPC_PRIMARY = https:/$()/eth-mainnet.g.alchemy.com/v2/$(VITE_ALCHEMY_API_KEY)
+
+// Legacy 1inch key (unused after moving to 0x)
 ONEINCH_API_KEY = your_1inch_api_key_here

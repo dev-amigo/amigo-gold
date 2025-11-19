@@ -2,8 +2,8 @@ import Foundation
 import PrivySDK
 import Combine
 
-/// DEX swap service for USDT → PAXG conversion
-/// Uses 1inch API for best execution prices
+/// DEX swap service for USDC → PAXG conversion
+/// Uses 0x Swap API for routing
 final class DEXSwapService: ObservableObject {
     
     // MARK: - Types
@@ -57,11 +57,11 @@ final class DEXSwapService: ObservableObject {
         let decimals: Int
         let name: String
         
-        static let usdt = Token(
-            address: ContractAddresses.usdt,
-            symbol: "USDT",
+        static let usdc = Token(
+            address: ContractAddresses.usdc,
+            symbol: "USDC",
             decimals: 6,
-            name: "Tether USD"
+            name: "USD Coin"
         )
         
         static let paxg = Token(
@@ -91,7 +91,7 @@ final class DEXSwapService: ObservableObject {
         var errorDescription: String? {
             switch self {
             case .insufficientBalance:
-                return "Insufficient USDT balance"
+                return "Insufficient USDC balance"
             case .insufficientLiquidity:
                 return "Insufficient liquidity for this swap"
             case .slippageTooHigh:
@@ -122,9 +122,9 @@ final class DEXSwapService: ObservableObject {
     @Published var currentQuote: SwapQuote?
     @Published var approvalState: ApprovalState = .notRequired
     
-    // 1inch API configuration
-    private let oneInchBaseURL = "https://api.1inch.dev/swap/v6.0/1" // Ethereum Mainnet
-    private let oneInchAPIKey: String
+    // 0x API configuration
+    private let zeroExBaseURL = "https://api.0x.org" // Ethereum Mainnet
+    private let zeroExAPIKey: String
     
     // Slippage tolerance (0.5% default)
     let defaultSlippageTolerance = ServiceConstants.defaultSlippageTolerance
@@ -134,21 +134,21 @@ final class DEXSwapService: ObservableObject {
     init(
         web3Client: Web3Client = Web3Client(),
         erc20Contract: ERC20Contract = ERC20Contract(),
-        oneInchAPIKey: String? = nil
+        zeroExAPIKey: String? = nil
     ) {
         self.web3Client = web3Client
         self.erc20Contract = erc20Contract
         
         // Get API key from Info.plist or use empty string for testing
-        self.oneInchAPIKey = oneInchAPIKey ?? (Bundle.main.object(forInfoDictionaryKey: "AG1InchAPIKey") as? String ?? "")
+        self.zeroExAPIKey = zeroExAPIKey ?? (Bundle.main.object(forInfoDictionaryKey: "AG0xAPIKey") as? String ?? (Bundle.main.object(forInfoDictionaryKey: "ZEROX_SWAP_KEY") as? String ?? ""))
         
         AppLogger.log("🔄 DEXSwapService initialized", category: "dex")
-        AppLogger.log("   1inch API URL: \(oneInchBaseURL)", category: "dex")
+        AppLogger.log("   0x API URL: \(zeroExBaseURL)", category: "dex")
     }
     
     // MARK: - Public Methods
     
-    /// Get swap quote for USDT → PAXG
+    /// Get swap quote for USDC → PAXG
     func getQuote(params: SwapParams) async throws -> SwapQuote {
         AppLogger.log("📊 Getting swap quote: \(params.amount) \(params.fromToken.symbol) → \(params.toToken.symbol)", category: "dex")
         
@@ -159,9 +159,9 @@ final class DEXSwapService: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
-        // Check balance (currently only USDT is supported)
+        // Check balance (currently only USDC is supported)
         let balances = try await erc20Contract.balancesOf(
-            tokens: [.usdt],
+            tokens: [.usdc],
             address: params.fromAddress
         )
         
@@ -169,11 +169,11 @@ final class DEXSwapService: ObservableObject {
             throw SwapError.insufficientBalance
         }
         
-        // In production, call 1inch API for real quote
+        // In production, call 0x API for real quote
         // For now, use simplified calculation based on approximate prices
-        // USDT ≈ $1, PAXG ≈ $2000 (1 oz gold)
-        let paxgPriceInUSDT = ServiceConstants.goldPriceUSDT
-        let toAmount = params.amount / paxgPriceInUSDT
+        // USDC ≈ $1, PAXG ≈ $2000 (1 oz gold)
+        let paxgPriceInUSDC = ServiceConstants.goldPriceUSDT
+        let toAmount = params.amount / paxgPriceInUSDC
         let priceImpact: Decimal = 0.1 // 0.1% for demo
         
         let quote = SwapQuote(
@@ -254,11 +254,11 @@ final class DEXSwapService: ObservableObject {
         AppLogger.log("🔄 Executing swap: \(params.amount) \(params.fromToken.symbol) → \(params.toToken.symbol)", category: "dex")
         
         // Check approval first
-        let oneInchRouter = ContractAddresses.oneInchRouterV6
+        let exchangeProxy = ContractAddresses.zeroExExchangeProxy
         let approvalState = try await checkApproval(
             tokenAddress: params.fromToken.address,
             ownerAddress: params.fromAddress,
-            spenderAddress: oneInchRouter,
+            spenderAddress: exchangeProxy,
             amount: params.amount
         )
         
@@ -270,7 +270,7 @@ final class DEXSwapService: ObservableObject {
         defer { isLoading = false }
         
         // In production:
-        // 1. Get swap transaction data from 1inch API
+        // 1. Get swap transaction data from 0x API
         // 2. Use Privy SDK to sign and send transaction with gas sponsorship
         // 3. Return transaction hash
         
@@ -299,4 +299,3 @@ private extension String {
         return String(repeating: element, count: padCount) + self
     }
 }
-

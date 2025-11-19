@@ -2,7 +2,7 @@ import SwiftUI
 
 struct WithdrawView: View {
     @EnvironmentObject private var themeManager: ThemeManager
-    @State private var usdtAmount: String = ""
+    @State private var usdcAmount: String = ""
     
     var body: some View {
         ScrollView {
@@ -40,7 +40,7 @@ struct WithdrawView: View {
                 PerFolioSectionHeader(
                     icon: "arrow.up.circle.fill",
                     title: "Cash Out to Bank Account",
-                    subtitle: "Convert USDT to INR and transfer to your bank"
+                    subtitle: "Convert USDC to INR and transfer to your bank"
                 )
                 
                 Divider()
@@ -52,8 +52,8 @@ struct WithdrawView: View {
                 // Amount input with quick buttons
                 PerFolioInputField(
                     label: "Withdraw Amount",
-                    text: $usdtAmount,
-                    trailingText: "USDT",
+                    text: $usdcAmount,
+                    trailingText: "USDC",
                     presetValues: ["50%", "Max"]
                 )
                 
@@ -101,7 +101,7 @@ struct WithdrawView: View {
                     .foregroundStyle(themeManager.perfolioTheme.tintColor)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("0.00 USDT")
+                    Text("0.00 USDC")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                     Text("≈ ₹0.00")

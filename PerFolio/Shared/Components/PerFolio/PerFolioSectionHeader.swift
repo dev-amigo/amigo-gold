@@ -46,11 +46,10 @@ struct PerFolioSectionHeader: View {
         PerFolioSectionHeader(
             icon: "indianrupeesign.circle.fill",
             title: "Buy Crypto with INR",
-            subtitle: "Use UPI, bank transfer, or card to purchase USDT"
+            subtitle: "Use UPI, bank transfer, or card to purchase USDC"
         )
     }
     .padding()
     .background(Color(hex: "1D1D1D"))
     .environmentObject(ThemeManager())
 }
-
