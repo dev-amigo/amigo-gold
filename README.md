@@ -39,6 +39,7 @@ Liquid Glass–styled SwiftUI experience for a crypto-backed gold trading produc
   - `DEEP_LINK_SCHEME`, `DEFAULT_OAUTH_PROVIDER`
   - `ALCHEMY_API_KEY` (optional) – mirrors the web `VITE_ALCHEMY_API_KEY`; accept either a full HTTPS RPC URL or a bare Alchemy API key that resolves to `https://eth-mainnet.g.alchemy.com/v2/<key>`
   - `ETHEREUM_RPC_FALLBACK` – default public RPC (kept at `https://ethereum.publicnode.com` to stay aligned with wagmi’s fallback transport)
+  - `ZEROX_API_KEY` – 0x Swap API key used for USDC→PAXG quotes/transactions in the wallet swap module
 - Update these values only via `Configurations/*.xcconfig` so both Info.plist and runtime configs stay in sync.
 - Privy access tokens are verified client-side against JWKS before marking a session as authenticated.
 
