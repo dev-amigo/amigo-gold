@@ -5,6 +5,17 @@ import PrivySDK
 
 @MainActor
 final class LandingViewModel: ObservableObject {
+    private enum WalletError: LocalizedError {
+        case creationFailed(String)
+        
+        var errorDescription: String? {
+            switch self {
+            case .creationFailed(let message):
+                return message
+            }
+        }
+    }
+    
     enum EmailLoginState {
         case emailInput
         case codeVerification
@@ -73,36 +84,15 @@ final class LandingViewModel: ObservableObject {
                 
                 // Extract embedded wallet from Privy user
                 // Get embedded Ethereum wallets from Privy SDK
-                // Refresh the user so embedded wallets are hydrated before we read them
-                try await user.refresh()
+                let embeddedWallet = try await ensureEmbeddedWallet(for: user)
                 
-                var embeddedWallets = user.embeddedEthereumWallets
-                AppLogger.log("Found \(embeddedWallets.count) embedded Ethereum wallets after refresh", category: "auth")
-                
-                // If no embedded wallet, attempt to create one instead of using a hardcoded fallback
-                if embeddedWallets.isEmpty {
-                    AppLogger.log("⚠️ No embedded wallets returned. Attempting to create one...", category: "auth")
-                    do {
-                        let newWallet = try await user.createEthereumWallet()
-                        embeddedWallets = [newWallet]
-                        AppLogger.log("✅ Successfully created embedded wallet via Privy SDK", category: "auth")
-                    } catch {
-                        AppLogger.log("❌ Failed to create embedded wallet: \(error)", category: "auth")
-                        throw error
-                    }
-                }
-                
-                guard let firstWallet = embeddedWallets.first else {
-                    throw PrivyAuthError.notConfigured
-                }
-
                 // Extract wallet address and ID
-                let walletAddress = firstWallet.address
-                let walletId = firstWallet.id
+                let walletAddress = embeddedWallet.address
+                let walletId = embeddedWallet.id
                 
-                AppLogger.log("✅ Embedded wallet ready!", category: "auth")
+                AppLogger.log("✅ Embedded wallet extracted from SDK!", category: "auth")
                 AppLogger.log("   Wallet Address: \(walletAddress)", category: "auth")
-                AppLogger.log("   Wallet ID: \(walletId ?? "n/a")", category: "auth")
+                AppLogger.log("   Wallet ID: \(walletId)", category: "auth")
                 AppLogger.log("   User ID: \(user.id)", category: "auth")
                 
                 // Save wallet info to UserDefaults
@@ -119,6 +109,12 @@ final class LandingViewModel: ObservableObject {
                     message: String(format: L10n.string(.landingAlertSuccessMessage), user.id)
                 )
                 onAuthenticated()
+            } catch WalletError.creationFailed(let message) {
+                isLoading = false
+                alert = AlertConfig(
+                    title: "Wallet Unavailable",
+                    message: message
+                )
             } catch {
                 isLoading = false
                 let errorMessage = error.localizedDescription
@@ -159,6 +155,22 @@ final class LandingViewModel: ObservableObject {
     func cancelEmailVerification() {
         emailLoginState = .emailInput
         email = ""
+    }
+    
+    private func ensureEmbeddedWallet(for user: any PrivyUser) async throws -> any EmbeddedEthereumWallet {
+        if let wallet = user.embeddedEthereumWallets.first {
+            return wallet
+        }
+        
+        AppLogger.log("⚠️ No embedded wallets returned. Attempting to create one via Privy SDK...", category: "auth")
+        do {
+            let newWallet = try await user.createEthereumWallet()
+            AppLogger.log("✅ Embedded wallet created via SDK! Address: \(newWallet.address)", category: "auth")
+            return newWallet
+        } catch {
+            AppLogger.log("❌ Failed to create embedded wallet: \(error)", category: "auth")
+            throw WalletError.creationFailed("We couldn’t create a PerFolio wallet for your account. Please try again or contact support.")
+        }
     }
 
     func loginTapped() {

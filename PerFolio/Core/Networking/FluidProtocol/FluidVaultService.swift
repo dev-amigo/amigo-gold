@@ -181,7 +181,7 @@ final class FluidVaultService: ObservableObject {
         // Build operate transaction
         // operate(uint256 nftId, int256 newCol, int256 newDebt, address to)
         // Function selector: keccak256("operate(uint256,int256,int256,address)")[0:4]
-        let functionSelector = "0x032d2276"
+        let functionSelector = "0x690d8320"
         
         // nftId = 0 (create new position)
         let nftId = "0".paddingLeft(to: 64, with: "0")
@@ -190,9 +190,9 @@ final class FluidVaultService: ObservableObject {
         let collateralWei = request.collateralAmount * pow(Decimal(10), 18)
         let collateralHex = decimalToHex(collateralWei).paddingLeft(to: 64, with: "0")
         
-        // newDebt = borrow delta (positive means taking on debt)
+        // newDebt = positive borrow amount in smallest units
         let borrowSmallest = request.borrowAmount * pow(Decimal(10), 6)
-        let borrowHex = encodeSignedInt256Hex(value: borrowSmallest, isNegative: false)
+        let borrowHex = decimalToHex(borrowSmallest).paddingLeft(to: 64, with: "0")
         
         // to = user address
         let cleanAddress = request.userAddress.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
@@ -256,8 +256,8 @@ final class FluidVaultService: ObservableObject {
         // Get Privy auth coordinator
         let authCoordinator = PrivyAuthCoordinator.shared
         
-        // Log current auth state for debugging
-        let authState = authCoordinator.authState
+        let authState = await authCoordinator.resolvedAuthState()
+        
         AppLogger.log("🔍 Current AuthState type: \(type(of: authState))", category: "fluid")
         AppLogger.log("🔍 AuthState description: \(authState)", category: "fluid")
         
@@ -294,27 +294,23 @@ final class FluidVaultService: ObservableObject {
         AppLogger.log("   Data: \(request.data.prefix(66))...", category: "fluid")
         AppLogger.log("   Value: \(request.value)", category: "fluid")
         
-        // Send transaction via wallet provider
         do {
-            let chainId = await wallet.provider.chainId
-            AppLogger.log("🔗 Embedded wallet provider chain ID: \(chainId)", category: "fluid")
+            AppLogger.log("📤 Attempting to send transaction via Privy embedded wallet...", category: "fluid")
             
-            let unsignedTx = EthereumRpcRequest.UnsignedEthTransaction(
+            let chainId = await wallet.provider.chainId
+            let unsignedTx = PrivySDK.EthereumRpcRequest.UnsignedEthTransaction(
                 from: request.from,
                 to: request.to,
                 data: request.data,
-                value: makeHexQuantity(from: request.value),
+                value: makeHexQuantity(request.value),
                 chainId: .int(chainId)
             )
             
-            let rpcRequest = try EthereumRpcRequest.ethSendTransaction(transaction: unsignedTx)
-            AppLogger.log("📤 Sending eth_sendTransaction via Privy provider...", category: "fluid")
-            
+            let rpcRequest = try PrivySDK.EthereumRpcRequest.ethSendTransaction(transaction: unsignedTx)
             let txHash = try await wallet.provider.request(rpcRequest)
-            AppLogger.log("📬 Privy provider returned tx hash: \(txHash)", category: "fluid")
+            
+            AppLogger.log("✅ Privy embedded wallet submitted transaction: \(txHash)", category: "fluid")
             return txHash
-        } catch let error as FluidVaultError {
-            throw error
         } catch {
             AppLogger.log("❌ Transaction signing failed: \(error)", category: "fluid")
             throw FluidVaultError.transactionFailed("Signing failed: \(error.localizedDescription)")
@@ -327,6 +323,22 @@ final class FluidVaultService: ObservableObject {
         let from: String
         let data: String
         let value: String
+    }
+    
+    private func makeHexQuantity(_ rawValue: String) -> PrivySDK.EthereumRpcRequest.UnsignedEthTransaction.Quantity? {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+        
+        let formatted: String
+        if trimmed.lowercased().hasPrefix("0x") {
+            formatted = trimmed
+        } else {
+            formatted = "0x\(trimmed)"
+        }
+        
+        return .hexadecimalNumber(formatted)
     }
     
     /// Wait for transaction confirmation with polling
@@ -401,48 +413,8 @@ final class FluidVaultService: ObservableObject {
     }
     
     private func decimalToHex(_ value: Decimal) -> String {
-        let intValue = NSDecimalNumber(decimal: value).int64Value
+        let intValue = NSDecimalNumber(decimal: value).intValue
         return String(intValue, radix: 16)
-    }
-    
-    private func encodeSignedInt256Hex(value: Decimal, isNegative: Bool) -> String {
-        let unsignedHex = decimalToHex(value).paddingLeft(to: 64, with: "0")
-        return isNegative ? twosComplement256(of: unsignedHex) : unsignedHex
-    }
-    
-    private func twosComplement256(of hex: String) -> String {
-        var digits = Array(hex.lowercased())
-        
-        for index in 0..<digits.count {
-            guard let value = digits[index].hexDigitValue else { continue }
-            let inverted = 15 - value
-            digits[index] = hexDigit(for: inverted)
-        }
-        
-        var carry = 1
-        for index in stride(from: digits.count - 1, through: 0, by: -1) {
-            guard let value = digits[index].hexDigitValue else { continue }
-            let sum = value + carry
-            digits[index] = hexDigit(for: sum % 16)
-            carry = sum / 16
-            if carry == 0 { break }
-        }
-        
-        return String(digits)
-    }
-    
-    private func hexDigit(for value: Int) -> Character {
-        let base = value < 10 ? 48 + value : 87 + value
-        return Character(UnicodeScalar(base)!)
-    }
-    
-    private func makeHexQuantity(from value: String) -> EthereumRpcRequest.UnsignedEthTransaction.Quantity {
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let intValue = Int(trimmed), !trimmed.hasPrefix("0x") && !trimmed.hasPrefix("0X") {
-            return .int(intValue)
-        }
-        let prefixed = trimmed.lowercased().hasPrefix("0x") ? trimmed : "0x\(trimmed)"
-        return .hexadecimalNumber(prefixed)
     }
 }
 
