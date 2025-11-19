@@ -37,6 +37,7 @@ Liquid Glass–styled SwiftUI experience for a crypto-backed gold trading produc
   - `APP_ENVIRONMENT`, `API_BASE_URL`
   - `PRIVY_APP_ID`, `PRIVY_APP_CLIENT_ID`, `PRIVY_JWKS_URL`
   - `PRIVY_APP_SECRET` – used to sign sponsored Privy RPC requests when sending transactions via Privy REST
+  - `ENABLE_PRIVY_SPONSORED_RPC` – `YES` to route transactions through Privy’s sponsored RPC endpoint, `NO` to use the embedded wallet provider directly
   - `DEEP_LINK_SCHEME`, `DEFAULT_OAUTH_PROVIDER`
   - `ALCHEMY_API_KEY` (optional) – mirrors the web `VITE_ALCHEMY_API_KEY`; accept either a full HTTPS RPC URL or a bare Alchemy API key that resolves to `https://eth-mainnet.g.alchemy.com/v2/<key>`
   - `ETHEREUM_RPC_FALLBACK` – default public RPC (kept at `https://ethereum.publicnode.com` to stay aligned with wagmi’s fallback transport)

@@ -22,6 +22,7 @@ final class FluidVaultService: ObservableObject {
     private let vaultConfigService: VaultConfigService
     private let priceOracleService: PriceOracleService
     private let apyService: BorrowAPYService
+    private let environment: EnvironmentConfiguration
     
     // MARK: - Initialization
     
@@ -30,13 +31,15 @@ final class FluidVaultService: ObservableObject {
         erc20Contract: ERC20Contract = ERC20Contract(),
         vaultConfigService: VaultConfigService? = nil,
         priceOracleService: PriceOracleService? = nil,
-        apyService: BorrowAPYService? = nil
+        apyService: BorrowAPYService? = nil,
+        environment: EnvironmentConfiguration = .current
     ) {
         self.web3Client = web3Client
         self.erc20Contract = erc20Contract
         self.vaultConfigService = vaultConfigService ?? VaultConfigService(web3Client: web3Client)
         self.priceOracleService = priceOracleService ?? PriceOracleService()
         self.apyService = apyService ?? BorrowAPYService(web3Client: web3Client)
+        self.environment = environment
         
         AppLogger.log("🏦 FluidVaultService initialized", category: "fluid")
     }
@@ -296,18 +299,26 @@ final class FluidVaultService: ObservableObject {
         AppLogger.log("   Value: \(request.value)", category: "fluid")
         
         do {
-            AppLogger.log("📤 Attempting sponsored transaction via Privy RPC...", category: "fluid")
-            guard let walletId = UserDefaults.standard.string(forKey: "userWalletId") else {
-                throw FluidVaultError.transactionFailed("Missing Privy wallet identifier")
+            if environment.enablePrivySponsoredRPC {
+                AppLogger.log("📤 Attempting sponsored transaction via Privy RPC...", category: "fluid")
+                guard let walletId = UserDefaults.standard.string(forKey: "userWalletId") else {
+                    throw FluidVaultError.transactionFailed("Missing Privy wallet identifier")
+                }
+                let txHash = try await sendSponsoredTransaction(
+                    request: request,
+                    walletId: walletId
+                )
+                AppLogger.log("✅ Privy RPC submitted transaction: \(txHash)", category: "fluid")
+                return txHash
+            } else {
+                AppLogger.log("📤 Attempting to send transaction via embedded wallet provider...", category: "fluid")
+                let txHash = try await sendProviderTransaction(
+                    request: request,
+                    wallet: wallet
+                )
+                AppLogger.log("✅ Embedded wallet submitted transaction: \(txHash)", category: "fluid")
+                return txHash
             }
-            let environment = EnvironmentConfiguration.current
-            let txHash = try await sendSponsoredTransaction(
-                request: request,
-                walletId: walletId,
-                environment: environment
-            )
-            AppLogger.log("✅ Privy RPC submitted transaction: \(txHash)", category: "fluid")
-            return txHash
         } catch {
             AppLogger.log("❌ Transaction signing failed: \(error)", category: "fluid")
             throw FluidVaultError.transactionFailed("Signing failed: \(error.localizedDescription)")
@@ -322,10 +333,25 @@ final class FluidVaultService: ObservableObject {
         let value: String
     }
     
+    private func sendProviderTransaction(
+        request: TransactionRequest,
+        wallet: any PrivySDK.EmbeddedEthereumWallet
+    ) async throws -> String {
+        let chainId = await wallet.provider.chainId
+        let unsignedTx = PrivySDK.EthereumRpcRequest.UnsignedEthTransaction(
+            from: request.from,
+            to: request.to,
+            data: request.data,
+            value: makeHexQuantity(request.value),
+            chainId: .int(chainId)
+        )
+        let rpcRequest = try PrivySDK.EthereumRpcRequest.ethSendTransaction(transaction: unsignedTx)
+        return try await wallet.provider.request(rpcRequest)
+    }
+    
     private func sendSponsoredTransaction(
         request: TransactionRequest,
-        walletId: String,
-        environment: EnvironmentConfiguration
+        walletId: String
     ) async throws -> String {
         guard !environment.privyAppID.isEmpty,
               !environment.privyAppSecret.isEmpty else {
@@ -424,6 +450,22 @@ final class FluidVaultService: ObservableObject {
         }
         
         return result
+    }
+    
+    private func makeHexQuantity(_ rawValue: String) -> PrivySDK.EthereumRpcRequest.UnsignedEthTransaction.Quantity? {
+        let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+        
+        let formatted: String
+        if trimmed.lowercased().hasPrefix("0x") {
+            formatted = trimmed
+        } else {
+            formatted = "0x\(trimmed)"
+        }
+        
+        return .hexadecimalNumber(formatted)
     }
     
     private func makePrivySignature(

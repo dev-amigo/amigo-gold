@@ -87,6 +87,8 @@
 	<string>$(DEEP_LINK_SCHEME)</string>
 	<key>AGDefaultOAuthProvider</key>
 	<string>$(DEFAULT_OAUTH_PROVIDER)</string>
+	<key>AGEnablePrivySponsoredRPC</key>
+	<string>$(ENABLE_PRIVY_SPONSORED_RPC)</string>
 	<key>AGOnMetaAPIKey</key>
 	<string>$(ONMETA_API_KEY)</string>
 	<key>AGOnMetaBaseURL</key>

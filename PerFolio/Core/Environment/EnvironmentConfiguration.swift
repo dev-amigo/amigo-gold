@@ -21,6 +21,7 @@ struct EnvironmentConfiguration: Equatable {
     let privyJWKSURL: URL
     let defaultOAuthProvider: String
     let featureFlags: FeatureFlags
+    let enablePrivySponsoredRPC: Bool
     let networkHeaders: [String: String]
 
     static var current: EnvironmentConfiguration {
@@ -34,6 +35,7 @@ struct EnvironmentConfiguration: Equatable {
         let defaultOAuthProvider = bundle.object(forInfoDictionaryKey: "AGDefaultOAuthProvider") as? String ?? "google"
         let jwksURLString = bundle.object(forInfoDictionaryKey: "AGPrivyJWKSURL") as? String ?? ""
         let jwksURL = URL(string: jwksURLString) ?? EnvironmentConfiguration.development.privyJWKSURL
+        let enableSponsored = (bundle.object(forInfoDictionaryKey: "AGEnablePrivySponsoredRPC") as? String ?? "NO").uppercased() == "YES"
 
         AppLogger.log("🔧 Environment Config Loaded:", category: "config")
         AppLogger.log("  - Environment: \(environment.displayName)", category: "config")
@@ -54,6 +56,7 @@ struct EnvironmentConfiguration: Equatable {
             privyJWKSURL: jwksURL,
             defaultOAuthProvider: defaultOAuthProvider,
             featureFlags: environment == .development ? [.enableVerboseLogging] : [],
+            enablePrivySponsoredRPC: enableSponsored,
             networkHeaders: [
                 "X-Client": "AmigoGold-\(environment.displayName)",
                 "Accept": "application/json"
@@ -71,6 +74,7 @@ struct EnvironmentConfiguration: Equatable {
         privyJWKSURL: URL(string: "https://auth.privy.io/api/v1/apps/cmhenc7hj004ijy0c311hbf2z/jwks.json")!,
         defaultOAuthProvider: "email",
         featureFlags: [.enableVerboseLogging],
+        enablePrivySponsoredRPC: false,
         networkHeaders: [
             "X-Client": "PerFolioDev",
             "Accept": "application/json"
@@ -87,6 +91,7 @@ struct EnvironmentConfiguration: Equatable {
         privyJWKSURL: URL(string: "https://auth.privy.io/api/v1/apps/cmhenc7hj004ijy0c311hbf2z/jwks.json")!,
         defaultOAuthProvider: "email",
         featureFlags: [],
+        enablePrivySponsoredRPC: false,
         networkHeaders: [
             "X-Client": "PerFolio",
             "Accept": "application/json"
