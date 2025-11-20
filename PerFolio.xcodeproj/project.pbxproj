@@ -9,6 +9,11 @@
 /* Begin PBXBuildFile section */
 		58C4E427134E4403AC7E78C6 /* Privy in Frameworks */ = {isa = PBXBuildFile; productRef = 2C9B3DFB1F5443F0AE14FC26 /* Privy */; };
 		B079E7FBB76342C38B8C5F50 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F0E6EDC2AF6D4E329AA7D838 /* Localizable.strings */; };
+		D5F8C7C52ECF096B00657917 /* WalletConnect in Frameworks */ = {isa = PBXBuildFile; productRef = D5F8C7C42ECF096B00657917 /* WalletConnect */; };
+		D5F8C7C72ECF096B00657917 /* WalletConnectAuth in Frameworks */ = {isa = PBXBuildFile; productRef = D5F8C7C62ECF096B00657917 /* WalletConnectAuth */; };
+		D5F8C7C92ECF096B00657917 /* WalletConnectChat in Frameworks */ = {isa = PBXBuildFile; productRef = D5F8C7C82ECF096B00657917 /* WalletConnectChat */; };
+		D5F8C7CB2ECF096B00657917 /* WalletConnectEcho in Frameworks */ = {isa = PBXBuildFile; productRef = D5F8C7CA2ECF096B00657917 /* WalletConnectEcho */; };
+		D5F8C7CD2ECF096B00657917 /* WalletConnectNetworking in Frameworks */ = {isa = PBXBuildFile; productRef = D5F8C7CC2ECF096B00657917 /* WalletConnectNetworking */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -61,6 +66,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				58C4E427134E4403AC7E78C6 /* Privy in Frameworks */,
+				D5F8C7CD2ECF096B00657917 /* WalletConnectNetworking in Frameworks */,
+				D5F8C7C92ECF096B00657917 /* WalletConnectChat in Frameworks */,
+				D5F8C7C72ECF096B00657917 /* WalletConnectAuth in Frameworks */,
+				D5F8C7C52ECF096B00657917 /* WalletConnect in Frameworks */,
+				D5F8C7CB2ECF096B00657917 /* WalletConnectEcho in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -133,6 +143,11 @@
 			name = PerFolio;
 			packageProductDependencies = (
 				2C9B3DFB1F5443F0AE14FC26 /* Privy */,
+				D5F8C7C42ECF096B00657917 /* WalletConnect */,
+				D5F8C7C62ECF096B00657917 /* WalletConnectAuth */,
+				D5F8C7C82ECF096B00657917 /* WalletConnectChat */,
+				D5F8C7CA2ECF096B00657917 /* WalletConnectEcho */,
+				D5F8C7CC2ECF096B00657917 /* WalletConnectNetworking */,
 			);
 			productName = "Amigo Gold";
 			productReference = D5D384412EC489E600956DF2 /* PerFolio.app */;
@@ -218,6 +233,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				7A6D26B74F9D46BF8CD89B90 /* XCRemoteSwiftPackageReference "privy-ios" */,
+				D5F8C7C32ECF096B00657917 /* XCRemoteSwiftPackageReference "WalletConnectSwiftV2" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D5D384422EC489E600956DF2 /* Products */;
@@ -639,6 +655,14 @@
 				kind = branch;
 			};
 		};
+		D5F8C7C32ECF096B00657917 /* XCRemoteSwiftPackageReference "WalletConnectSwiftV2" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/WalletConnect/WalletConnectSwiftV2";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.6.6;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -646,6 +670,31 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7A6D26B74F9D46BF8CD89B90 /* XCRemoteSwiftPackageReference "privy-ios" */;
 			productName = Privy;
+		};
+		D5F8C7C42ECF096B00657917 /* WalletConnect */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D5F8C7C32ECF096B00657917 /* XCRemoteSwiftPackageReference "WalletConnectSwiftV2" */;
+			productName = WalletConnect;
+		};
+		D5F8C7C62ECF096B00657917 /* WalletConnectAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D5F8C7C32ECF096B00657917 /* XCRemoteSwiftPackageReference "WalletConnectSwiftV2" */;
+			productName = WalletConnectAuth;
+		};
+		D5F8C7C82ECF096B00657917 /* WalletConnectChat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D5F8C7C32ECF096B00657917 /* XCRemoteSwiftPackageReference "WalletConnectSwiftV2" */;
+			productName = WalletConnectChat;
+		};
+		D5F8C7CA2ECF096B00657917 /* WalletConnectEcho */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D5F8C7C32ECF096B00657917 /* XCRemoteSwiftPackageReference "WalletConnectSwiftV2" */;
+			productName = WalletConnectEcho;
+		};
+		D5F8C7CC2ECF096B00657917 /* WalletConnectNetworking */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D5F8C7C32ECF096B00657917 /* XCRemoteSwiftPackageReference "WalletConnectSwiftV2" */;
+			productName = WalletConnectNetworking;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

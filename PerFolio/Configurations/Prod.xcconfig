@@ -12,6 +12,11 @@ ETHEREUM_RPC_FALLBACK = https:/$()/ethereum.publicnode.com
 DEEP_LINK_SCHEME = perfolio
 DEFAULT_OAUTH_PROVIDER = email
 
+// WalletConnect v2
+WALLETCONNECT_PROJECT_ID = 91eed97ac856ce8be988b8f31912ea27
+WALLETCONNECT_RELAY_HOST = relay.walletconnect.com
+WALLETCONNECT_APP_SCHEME = $(DEEP_LINK_SCHEME)
+
 // OnMeta Configuration (INR on-ramp)
 ONMETA_API_KEY = 3adc6318-8e68-41b8-8d39-dcb354eb25ce
 ONMETA_BASE_URL = https:/$()/platform.onmeta.in

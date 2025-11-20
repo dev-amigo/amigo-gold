@@ -85,6 +85,12 @@
 	<string>$(ETHEREUM_RPC_FALLBACK)</string>
 	<key>AGDeepLinkScheme</key>
 	<string>$(DEEP_LINK_SCHEME)</string>
+	<key>AGWalletConnectProjectID</key>
+	<string>$(WALLETCONNECT_PROJECT_ID)</string>
+	<key>AGWalletConnectRelayHost</key>
+	<string>$(WALLETCONNECT_RELAY_HOST)</string>
+	<key>AGWalletConnectAppScheme</key>
+	<string>$(WALLETCONNECT_APP_SCHEME)</string>
 	<key>AGDefaultOAuthProvider</key>
 	<string>$(DEFAULT_OAUTH_PROVIDER)</string>
 	<key>AGEnablePrivySponsoredRPC</key>
