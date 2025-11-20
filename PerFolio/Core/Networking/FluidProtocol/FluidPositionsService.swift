@@ -54,7 +54,8 @@ final class FluidPositionsService {
         
         let result = try await web3Client.ethCall(
             to: ContractAddresses.fluidVaultResolver,
-            data: callData
+            data: callData,
+            from: owner
         )
         
         guard let data = Data(hexString: result) else {

@@ -162,9 +162,22 @@ actor Web3Client {
     }
     
     /// Make an eth_call to a contract
-    func ethCall(to contractAddress: String, data: String, block: String = "latest") async throws -> String {
+    func ethCall(
+        to contractAddress: String,
+        data: String,
+        from: String? = nil,
+        block: String = "latest"
+    ) async throws -> String {
+        var callObject: [String: Any] = [
+            "to": contractAddress,
+            "data": data
+        ]
+        if let from = from, !from.isEmpty {
+            callObject["from"] = from
+        }
+        
         let params: [Any] = [
-            ["to": contractAddress, "data": data],
+            callObject,
             block
         ]
         
