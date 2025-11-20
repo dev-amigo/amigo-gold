@@ -143,11 +143,13 @@ actor Web3Client {
     /// Make a generic RPC call with automatic fallback
     func call(method: String, params: [Any]) async throws -> Any {
         // Try primary RPC
+        var primaryError: Error?
         do {
             let result = try await makeRPCCall(to: primaryRPC, method: method, params: params)
             return result
         } catch {
             AppLogger.log("Primary RPC failed for \(method): \(error.localizedDescription)", category: "web3")
+            primaryError = error
             
             // Try fallback RPC
             do {
@@ -155,6 +157,13 @@ actor Web3Client {
                 AppLogger.log("Fallback RPC succeeded for \(method)", category: "web3")
                 return result
             } catch {
+                AppLogger.log("Fallback RPC failed for \(method): \(error.localizedDescription)", category: "web3")
+                if let web3Error = error as? Web3Error {
+                    throw web3Error
+                }
+                if let web3Error = primaryError as? Web3Error {
+                    throw web3Error
+                }
                 AppLogger.log("All RPC endpoints failed for \(method)", category: "web3")
                 throw Web3Error.allRPCsFailed
             }

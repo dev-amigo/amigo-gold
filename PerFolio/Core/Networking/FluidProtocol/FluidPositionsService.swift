@@ -27,7 +27,7 @@ final class FluidPositionsService {
         let (config, paxgPrice, rawPositions) = try await (configTask, priceTask, rawTask)
         
         return rawPositions
-            .filter { !$0.isLiquidated && !$0.isSupplyPosition && $0.borrow > 0 }
+            .filter { !$0.isSupplyPosition && $0.borrow > 0 }
             .compactMap { raw -> BorrowPosition? in
                 let collateralHex = "0x" + raw.collateralHex
                 let borrowHex = "0x" + raw.borrowHex
@@ -52,17 +52,25 @@ final class FluidPositionsService {
         let cleanOwner = owner.replacingOccurrences(of: "0x", with: "").paddingLeft(to: 64, with: "0")
         let callData = "0x" + selector + cleanOwner
         
-        let result = try await web3Client.ethCall(
-            to: ContractAddresses.fluidVaultResolver,
-            data: callData,
-            from: owner
-        )
-        
-        guard let data = Data(hexString: result) else {
-            return []
+        do {
+            let result = try await web3Client.ethCall(
+                to: ContractAddresses.fluidVaultResolver,
+                data: callData,
+                from: owner
+            )
+            
+            guard let data = Data(hexString: result) else {
+                return []
+            }
+            
+            return decodeUserPositions(from: data)
+        } catch let error as Web3Error {
+            if case .rpcError(let code, let message) = error, code == 3 {
+                AppLogger.log("⚠️ positionsByUser reverted (\(message)). Treating as no positions.", category: "borrow")
+                return []
+            }
+            throw error
         }
-        
-        return decodeUserPositions(from: data)
     }
     
     private func decodeUserPositions(from data: Data) -> [ResolverPosition] {
@@ -115,8 +123,10 @@ private struct ResolverPosition {
 // MARK: - ABI Helpers
 
 private func decimalFromHex(_ hex: String, decimals: Int) -> Decimal {
-    let cleanHex = hex.trimmingCharacters(in: CharacterSet(charactersIn: "0"))
-    guard !cleanHex.isEmpty else { return 0 }
+    let cleanedPrefix = hex.replacingOccurrences(of: "0x", with: "")
+    let trimmedLeadingZeros = cleanedPrefix.drop { $0 == "0" }
+    let cleanHex = trimmedLeadingZeros.isEmpty ? "0" : String(trimmedLeadingZeros)
+    guard cleanHex != "0" else { return 0 }
     var result: Decimal = 0
     for char in cleanHex {
         if let digit = char.hexDigitValue {

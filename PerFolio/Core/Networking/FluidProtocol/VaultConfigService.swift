@@ -120,28 +120,43 @@ final class VaultConfigService: ObservableObject {
     /// Note: Full ABI decoding is complex. For MVP, we'll extract key values.
     private func parseVaultConfigResponse(_ hexData: String, vaultAddress: String) throws -> VaultConfig {
         let cleanHex = hexData.replacingOccurrences(of: "0x", with: "")
+        let wordLength = 64
+        let expectedWords = 5 // supply, borrow, collateralFactor, liquidationThreshold, liquidationPenalty
+        guard cleanHex.count >= wordLength * expectedWords else {
+            throw VaultConfigError.parsingError
+        }
         
-        // The response is a complex struct. Based on web app, the values we need are:
-        // - collateralFactor (max LTV): Usually around position 64-128 in the response
-        // - liquidationThreshold: Next 64 chars
-        // - liquidationPenalty: Next 64 chars
+        func word(_ index: Int) -> String {
+            let start = cleanHex.index(cleanHex.startIndex, offsetBy: index * wordLength)
+            let end = cleanHex.index(start, offsetBy: wordLength)
+            return String(cleanHex[start..<end])
+        }
         
-        // For now, since full ABI decoding is complex, we'll use safe defaults
-        // and rely on the web app's known values
+        func address(from word: String) -> String {
+            let suffix = word.suffix(40)
+            return "0x" + suffix
+        }
         
-        // In a production app, you'd use a proper ABI decoder library
-        // For MVP, using known safe values from web app
+        func percentage(from word: String) -> Decimal {
+            guard let value = UInt64(word, radix: 16) else { return 0 }
+            let percentage = Decimal(value) / 100
+            return percentage > 100 ? 100 : percentage
+        }
         
-        let config = VaultConfig(
+        let supplyToken = address(from: word(0))
+        let borrowToken = address(from: word(1))
+        let maxLTV = percentage(from: word(2))
+        let liquidationThreshold = percentage(from: word(3))
+        let liquidationPenalty = percentage(from: word(4))
+        
+        return VaultConfig(
             vaultAddress: vaultAddress,
-            supplyToken: ContractAddresses.paxg,
-            borrowToken: ContractAddresses.usdc,
-            maxLTV: 75.0,              // From web app
-            liquidationThreshold: 85.0, // From web app
-            liquidationPenalty: 3.0     // Standard Fluid penalty
+            supplyToken: supplyToken,
+            borrowToken: borrowToken,
+            maxLTV: maxLTV == 0 ? 75.0 : maxLTV,
+            liquidationThreshold: liquidationThreshold == 0 ? 85.0 : liquidationThreshold,
+            liquidationPenalty: liquidationPenalty == 0 ? 3.0 : liquidationPenalty
         )
-        
-        return config
     }
     
     /// Clear cached config (force refresh on next fetch)
@@ -174,4 +189,3 @@ enum VaultConfigError: LocalizedError {
         }
     }
 }
-
