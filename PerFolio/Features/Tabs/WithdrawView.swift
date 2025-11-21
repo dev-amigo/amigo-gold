@@ -35,12 +35,77 @@ struct WithdrawView: View {
 
 struct WithdrawSectionContent: View {
     @EnvironmentObject private var themeManager: ThemeManager
-    @State private var usdcAmount: String = ""
+    @StateObject private var viewModel = WithdrawViewModel()
+    @State private var showingTransakWidget = false
+    @State private var transakURL: URL?
+    @State private var errorMessage: String?
+    @State private var showingError = false
     
     var body: some View {
         VStack(spacing: 24) {
             withdrawCard
             withdrawalInfoCard
+        }
+        .sheet(isPresented: $showingTransakWidget) {
+            if let url = transakURL {
+                SafariView(url: url) {
+                    handleTransakDismiss()
+                }
+            }
+        }
+        .alert("Error", isPresented: $showingError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage ?? "An error occurred")
+        }
+        .alert("Balance Error", isPresented: .constant(isError)) {
+            Button("Retry") {
+                Task {
+                    await viewModel.loadBalance()
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            if case .error(let message) = viewModel.viewState {
+                Text(message)
+            }
+        }
+    }
+    
+    private var isError: Bool {
+        if case .error = viewModel.viewState {
+            return true
+        }
+        return false
+    }
+    
+    private func handleTransakDismiss() {
+        showingTransakWidget = false
+        transakURL = nil
+        
+        // Refresh balance after widget closes
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)  // Wait 2 seconds
+            await viewModel.loadBalance()
+        }
+    }
+    
+    private func startWithdrawal() {
+        // Validate first
+        let validation = viewModel.validateAndProceed()
+        guard validation.isValid else {
+            errorMessage = validation.errorMessage
+            showingError = true
+            return
+        }
+        
+        // Build Transak URL
+        do {
+            transakURL = try viewModel.buildTransakURL()
+            showingTransakWidget = true
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
         }
     }
     
@@ -60,9 +125,12 @@ struct WithdrawSectionContent: View {
                 
                 PerFolioInputField(
                     label: "Withdraw Amount",
-                    text: $usdcAmount,
+                    text: $viewModel.usdcAmount,
                     trailingText: "USDC",
-                    presetValues: ["50%", "Max"]
+                    presetValues: ["50%", "Max"],
+                    onPresetTap: { preset in
+                        viewModel.setPresetAmount(preset)
+                    }
                 )
                 
                 VStack(alignment: .leading, spacing: 8) {
@@ -88,7 +156,30 @@ struct WithdrawSectionContent: View {
                 
                 estimateBreakdown
                 
-                PerFolioButton("START OFF-RAMP (COMING SOON)", style: .disabled, isDisabled: true) { }
+                // Validation message
+                if !viewModel.usdcAmount.isEmpty {
+                    let validation = viewModel.validateAndProceed()
+                    if !validation.isValid, let error = validation.errorMessage {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(themeManager.perfolioTheme.warning)
+                            Text(error)
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundStyle(themeManager.perfolioTheme.warning)
+                        }
+                        .padding(12)
+                        .background(themeManager.perfolioTheme.warning.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                }
+                
+                PerFolioButton(
+                    "START WITHDRAWAL",
+                    style: viewModel.isValidAmount ? .primary : .disabled,
+                    isDisabled: !viewModel.isValidAmount
+                ) {
+                    startWithdrawal()
+                }
             }
         }
     }
@@ -103,13 +194,21 @@ struct WithdrawSectionContent: View {
                 Image(systemName: "dollarsign.circle.fill")
                     .foregroundStyle(themeManager.perfolioTheme.tintColor)
                 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("0.00 USDC")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                    Text("≈ ₹0.00")
-                        .font(.system(size: 14, weight: .regular, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                if viewModel.viewState == .loading {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Loading...")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(viewModel.formattedUSDCBalance)")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text(viewModel.usdcBalanceINR)
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
                 }
                 
                 Spacer()
@@ -124,8 +223,8 @@ struct WithdrawSectionContent: View {
     
     private var estimateBreakdown: some View {
         VStack(spacing: 8) {
-            PerFolioMetricRow(label: "You'll receive", value: "≈ ₹0.00")
-            PerFolioMetricRow(label: "Provider fee", value: "~2-3%")
+            PerFolioMetricRow(label: "You'll receive", value: viewModel.estimatedINRAmount)
+            PerFolioMetricRow(label: "Provider fee", value: "\(viewModel.providerFeeAmount) (~2.5%)")
         }
         .padding(12)
         .background(themeManager.perfolioTheme.primaryBackground.opacity(0.5))

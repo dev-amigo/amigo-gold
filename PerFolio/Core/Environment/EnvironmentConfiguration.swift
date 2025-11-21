@@ -23,6 +23,7 @@ struct EnvironmentConfiguration: Equatable {
     let featureFlags: FeatureFlags
     let enablePrivySponsoredRPC: Bool
     let networkHeaders: [String: String]
+    let transakAPIKey: String
 
     static var current: EnvironmentConfiguration {
         let bundle = Bundle.main
@@ -36,6 +37,7 @@ struct EnvironmentConfiguration: Equatable {
         let jwksURLString = bundle.object(forInfoDictionaryKey: "AGPrivyJWKSURL") as? String ?? ""
         let jwksURL = URL(string: jwksURLString) ?? EnvironmentConfiguration.development.privyJWKSURL
         let enableSponsored = (bundle.object(forInfoDictionaryKey: "AGEnablePrivySponsoredRPC") as? String ?? "NO").uppercased() == "YES"
+        let transakAPIKey = bundle.object(forInfoDictionaryKey: "AGTransakAPIKey") as? String ?? ""
 
         AppLogger.log("🔧 Environment Config Loaded:", category: "config")
         AppLogger.log("  - Environment: \(environment.displayName)", category: "config")
@@ -60,7 +62,8 @@ struct EnvironmentConfiguration: Equatable {
             networkHeaders: [
                 "X-Client": "AmigoGold-\(environment.displayName)",
                 "Accept": "application/json"
-            ]
+            ],
+            transakAPIKey: transakAPIKey
         )
     }
 
@@ -78,7 +81,8 @@ struct EnvironmentConfiguration: Equatable {
         networkHeaders: [
             "X-Client": "PerFolioDev",
             "Accept": "application/json"
-        ]
+        ],
+        transakAPIKey: ""
     )
 
     static let production = EnvironmentConfiguration(
@@ -95,6 +99,7 @@ struct EnvironmentConfiguration: Equatable {
         networkHeaders: [
             "X-Client": "PerFolio",
             "Accept": "application/json"
-        ]
+        ],
+        transakAPIKey: ""
     )
 }

@@ -125,5 +125,7 @@
 	<string>$(ONMETA_BASE_URL)</string>
 	<key>AG1InchAPIKey</key>
 	<string>$(ONEINCH_API_KEY)</string>
+	<key>AGTransakAPIKey</key>
+	<string>$(TRANSAK_API_KEY)</string>
 </dict>
 </plist>

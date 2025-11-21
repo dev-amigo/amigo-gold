@@ -11,6 +11,7 @@ struct PerFolioInputField: View {
     private let trailingText: String?
     private let presetValues: [String]
     private let keyboardType: UIKeyboardType
+    private let onPresetTap: ((String) -> Void)?
     
     init(
         label: String,
@@ -19,7 +20,8 @@ struct PerFolioInputField: View {
         leadingIcon: String? = nil,
         trailingText: String? = nil,
         presetValues: [String] = [],
-        keyboardType: UIKeyboardType = .decimalPad
+        keyboardType: UIKeyboardType = .decimalPad,
+        onPresetTap: ((String) -> Void)? = nil
     ) {
         self.label = label
         self.placeholder = placeholder
@@ -28,6 +30,7 @@ struct PerFolioInputField: View {
         self.trailingText = trailingText
         self.presetValues = presetValues
         self.keyboardType = keyboardType
+        self.onPresetTap = onPresetTap
     }
     
     var body: some View {
@@ -48,8 +51,12 @@ struct PerFolioInputField: View {
                 HStack(spacing: 8) {
                     ForEach(presetValues, id: \.self) { value in
                         PerFolioPresetButton(value) {
-                            text = value.replacingOccurrences(of: "₹", with: "")
-                                       .replacingOccurrences(of: "%", with: "")
+                            if let callback = onPresetTap {
+                                callback(value)
+                            } else {
+                                text = value.replacingOccurrences(of: "₹", with: "")
+                                           .replacingOccurrences(of: "%", with: "")
+                            }
                         }
                     }
                 }
