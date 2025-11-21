@@ -175,6 +175,14 @@ final class DEXSwapService: ObservableObject {
             throw SwapError.invalidAmount
         }
         
+        // 0x API requires minimum amount (~$10) to find profitable routes
+        // due to gas costs vs swap value
+        let minimumSwapAmount: Decimal = 10.0  // 10 USDC minimum
+        guard params.amount >= minimumSwapAmount else {
+            AppLogger.log("❌ Amount too small: \(params.amount) \(params.fromToken.symbol) (minimum: \(minimumSwapAmount))", category: "dex")
+            throw SwapError.networkError("Minimum swap amount is \(minimumSwapAmount) USDC. Please enter a larger amount.")
+        }
+        
         isLoading = true
         defer { isLoading = false }
         
