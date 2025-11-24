@@ -22,10 +22,11 @@ final class ThemeManager: ObservableObject {
         
         // Load saved theme variant or default to dark
         let savedVariantString = UserDefaults.standard.string(forKey: themeVariantKey) ?? ThemeVariant.dark.rawValue
-        self.currentThemeVariant = ThemeVariant(rawValue: savedVariantString) ?? .dark
-        self.perfolioTheme = PerFolioTheme.theme(for: currentThemeVariant)
+        let loadedVariant = ThemeVariant(rawValue: savedVariantString) ?? .dark
+        self.currentThemeVariant = loadedVariant
+        self.perfolioTheme = PerFolioTheme.theme(for: loadedVariant)
         
-        AppLogger.log("🎨 Theme Manager initialized with variant: \(currentThemeVariant.rawValue)", category: "theme")
+        AppLogger.log("🎨 Theme Manager initialized with variant: \(loadedVariant.rawValue)", category: "theme")
     }
 
     func toggleScheme() {
