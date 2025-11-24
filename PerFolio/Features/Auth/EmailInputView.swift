@@ -51,7 +51,7 @@ struct EmailInputView: View {
                     
                     // Simple text field with dark background
                     HStack(spacing: 12) {
-                        TextField("", text: $email, prompt: Text("your@email.com").foregroundColor(.gray.opacity(0.5)))
+                        TextField("", text: $email, prompt: Text("your@email.com").foregroundColor(themeManager.perfolioTheme.textTertiary))
                             .font(.system(size: 17, weight: .medium, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                             .keyboardType(.emailAddress)
@@ -75,8 +75,12 @@ struct EmailInputView: View {
                             .padding(.horizontal, 20)
                             .padding(.vertical, 18)
                             .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.black.opacity(0.8))
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(themeManager.perfolioTheme.secondaryBackground)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .stroke(themeManager.perfolioTheme.border, lineWidth: 1)
+                                    )
                             )
                         
                         if !email.isEmpty {

@@ -169,11 +169,11 @@ struct DigitBox: View {
     
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.black.opacity(0.8))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(theme.secondaryBackground)
                 .frame(width: 48, height: 64)
             
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(isFilled ? theme.tintColor : theme.border, lineWidth: 2)
                 .frame(width: 48, height: 64)
             
