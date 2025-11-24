@@ -44,10 +44,18 @@ struct EmailInputView: View {
                 
                 // Email Input Section
                 VStack(spacing: 20) {
-                    Text("Enter your email")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                        .frame(maxWidth: .infinity, alignment: .center)
+                    VStack(spacing: 8) {
+                        Text("Login with email")
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                        
+                        Text("This will create your wallet and register your account")
+                            .font(.system(size: 14, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textTertiary.opacity(0.7))
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
                     
                     // Simple text field with dark background
                     HStack(spacing: 12) {
