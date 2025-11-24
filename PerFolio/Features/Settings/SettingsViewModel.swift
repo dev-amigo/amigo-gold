@@ -123,8 +123,14 @@ final class SettingsViewModel: ObservableObject {
     }
     
     func logout() {
-        // Clear user data
+        // Clear all user data from UserDefaults
         UserDefaults.standard.removeObject(forKey: "userWalletAddress")
+        UserDefaults.standard.removeObject(forKey: "userWalletId")
+        UserDefaults.standard.removeObject(forKey: "privyUserId")
+        UserDefaults.standard.removeObject(forKey: "privyAccessToken")
+        UserDefaults.standard.removeObject(forKey: "privyUserEmail")
+        
+        AppLogger.log("User data cleared from UserDefaults", category: "auth")
         
         // Logout from Privy
         Task {

@@ -95,11 +95,12 @@ final class LandingViewModel: ObservableObject {
                 AppLogger.log("   Wallet ID: \(walletId)", category: "auth")
                 AppLogger.log("   User ID: \(user.id)", category: "auth")
                 
-                // Save wallet info to UserDefaults
+                // Save wallet info and user email to UserDefaults
                 UserDefaults.standard.set(walletAddress, forKey: "userWalletAddress")
                 UserDefaults.standard.set(walletId, forKey: "userWalletId")
                 UserDefaults.standard.set(user.id, forKey: "privyUserId")
                 UserDefaults.standard.set(accessToken, forKey: "privyAccessToken")
+                UserDefaults.standard.set(email, forKey: "privyUserEmail")
                 
                 AppLogger.log("🎉 Wallet info saved! Privy REST API now active!", category: "auth")
                 

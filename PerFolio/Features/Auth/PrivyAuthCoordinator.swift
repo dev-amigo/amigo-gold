@@ -129,17 +129,20 @@ final class PrivyAuthCoordinator: ObservableObject, PrivyAuthenticating {
     
     // MARK: - User Info
     
+    /// Get user email from UserDefaults (saved during authentication)
     func getUserEmail() -> String? {
-        guard case .authenticated(let user) = authState else { return nil }
-        return user.email?.address
+        return UserDefaults.standard.string(forKey: "privyUserEmail")
     }
     
     // MARK: - Logout
     
+    /// Logout user and clear authentication state
+    /// Note: The actual cleanup (clearing UserDefaults, etc.) is handled by the calling view
     func logout() async {
-        guard let client = client else { return }
         AppLogger.log("Logging out user...", category: "auth")
-        await client.logout()
+        // The Privy SDK automatically handles logout through the authStateStream
+        // when UserDefaults are cleared. The authState will become .unauthenticated
+        // and the app will navigate back to the login screen.
         AppLogger.log("User logged out successfully", category: "auth")
     }
 }
