@@ -5,6 +5,7 @@ struct EmailVerificationView: View {
     let onCodeEntered: (String) -> Void
     let onCancel: () -> Void
     let onResendCode: () -> Void
+    let isLoading: Bool
     
     @State private var code: String = ""
     @FocusState private var isCodeFocused: Bool
@@ -93,10 +94,9 @@ struct EmailVerificationView: View {
                                         if code.count > 6 {
                                             code = String(code.prefix(6))
                                         }
-                                        // Auto-submit when 6 digits entered
+                                        // Auto-dismiss keyboard when 6 digits entered (but don't auto-submit)
                                         if code.count == 6 {
                                             isCodeFocused = false
-                                            onCodeEntered(code)
                                         }
                                     }
                                 
@@ -125,10 +125,14 @@ struct EmailVerificationView: View {
                         // Actions
                         VStack(spacing: 16) {
                             PerFolioButton(
-                                "Verify Code",
+                                isLoading ? "Verifying..." : "Verify Code",
+                                isLoading: isLoading,
                                 isDisabled: code.count != 6
                             ) {
-                                onCodeEntered(code)
+                                if !isLoading {
+                                    HapticManager.shared.medium()
+                                    onCodeEntered(code)
+                                }
                             }
                             
                             Button(action: {
@@ -189,7 +193,8 @@ struct DigitBox: View {
         email: "user@example.com",
         onCodeEntered: { _ in },
         onCancel: {},
-        onResendCode: {}
+        onResendCode: {},
+        isLoading: false
     )
     .environmentObject(ThemeManager())
 }

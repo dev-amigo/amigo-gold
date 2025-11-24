@@ -53,7 +53,8 @@ struct LandingView: View {
                     email: viewModel.email,
                     onCodeEntered: viewModel.verifyEmailCode,
                     onCancel: viewModel.cancelEmailVerification,
-                    onResendCode: viewModel.resendEmailCode
+                    onResendCode: viewModel.resendEmailCode,
+                    isLoading: viewModel.isLoading
                 )
             }
         }
