@@ -297,16 +297,23 @@ struct PerFolioDashboardView: View {
             
             // Vault Configuration
             PerFolioCard {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 16) {
                     Text("VAULT CONFIGURATION")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                        vaultInfoItem(title: "Liquidation Threshold", value: viewModel.liquidationThreshold)
-                        vaultInfoItem(title: "Liquidation Penalty", value: viewModel.liquidationPenalty)
-                        vaultInfoItem(title: "PAXG Current Price", value: viewModel.paxgCurrentPrice)
-                        vaultInfoItem(title: "Active Positions", value: viewModel.activePositions)
+                    VStack(spacing: 20) {
+                        HStack(alignment: .top) {
+                            vaultInfoItem(title: "Liquidation Threshold", value: viewModel.liquidationThreshold)
+                            Spacer()
+                            vaultInfoItem(title: "Liquidation Penalty", value: viewModel.liquidationPenalty)
+                        }
+                        
+                        HStack(alignment: .top) {
+                            vaultInfoItem(title: "PAXG Current Price", value: viewModel.paxgCurrentPrice)
+                            Spacer()
+                            vaultInfoItem(title: "Active Positions", value: viewModel.activePositions)
+                        }
                     }
                 }
             }
@@ -343,13 +350,18 @@ struct PerFolioDashboardView: View {
     }
     
     private func vaultInfoItem(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.system(size: 12, weight: .regular, design: .rounded))
-                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-            Text(value)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(value)
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+            }
+            Spacer(minLength: 0)
         }
     }
     

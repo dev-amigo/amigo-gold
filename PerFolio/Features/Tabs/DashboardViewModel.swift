@@ -174,21 +174,25 @@ final class DashboardViewModel: ObservableObject {
     // MARK: - Statistics Computed Properties
     
     var totalCollateral: String {
+        guard !borrowPositions.isEmpty else { return "0.00 PAXG" }
         let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.collateralAmount }
         return formatDecimal(total, maxDecimals: 4) + " PAXG"
     }
     
     var totalCollateralUSD: String {
+        guard !borrowPositions.isEmpty else { return "$0.00" }
         let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.collateralValueUSD }
         return formatCurrency(total)
     }
     
     var totalBorrowed: String {
+        guard !borrowPositions.isEmpty else { return "0.00 USDC" }
         let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.borrowAmount }
         return formatDecimal(total, maxDecimals: 2) + " USDC"
     }
     
     var totalBorrowedUSD: String {
+        guard !borrowPositions.isEmpty else { return "$0.00" }
         let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.debtValueUSD }
         return formatCurrency(total)
     }
@@ -321,14 +325,20 @@ final class DashboardViewModel: ObservableObject {
         let endDate = Date()
         let startDate = calendar.date(byAdding: .day, value: -90, to: endDate)!
         
-        // Generate 90 data points
+        // Start with a base price 20% lower than current (simulating growth)
+        let startPrice = currentPrice * 0.8
+        
+        // Generate 90 data points with progressive trend
         for i in 0...89 {
             guard let date = calendar.date(byAdding: .day, value: i, to: startDate) else { continue }
             
-            // Generate price with some variance (±20%)
-            let variance = Decimal(Double.random(in: -0.2...0.2))
-            let basePrice = currentPrice * (1 + variance)
-            let price = max(basePrice, 1) // Ensure price stays positive
+            // Calculate progressive price (trend upward)
+            let progress = Decimal(i) / Decimal(89)
+            let trendPrice = startPrice + (currentPrice - startPrice) * progress
+            
+            // Add daily variance (±3%)
+            let dailyVariance = Decimal(Double.random(in: -0.03...0.03))
+            let price = max(trendPrice * (1 + dailyVariance), 1)
             
             points.append(PricePoint(date: date, price: price))
         }
