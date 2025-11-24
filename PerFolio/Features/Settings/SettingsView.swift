@@ -134,14 +134,9 @@ struct SettingsView: View {
                             .symbolRenderingMode(.hierarchical)
                             .frame(width: 28, alignment: .center)
                         
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(variant.rawValue)
-                                .font(.system(size: 17, design: .rounded))
-                                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                            Text(variant.description)
-                                .font(.system(size: 13))
-                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                        }
+                        Text(variant.rawValue)
+                            .font(.system(size: 17, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                         
                         Spacer()
                         
@@ -159,7 +154,7 @@ struct SettingsView: View {
             Text("Theme")
                 .foregroundStyle(themeManager.perfolioTheme.textPrimary)
         } footer: {
-            Text("Choose your preferred dark theme variant. Changes apply instantly.")
+            Text("Changes apply instantly.")
                 .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                 .font(.system(size: 13))
         }
