@@ -12,6 +12,9 @@ struct SettingsView: View {
                 // User Profile Section
                 userProfileSection
                 
+                // Theme Section
+                themeSection
+                
                 // App Settings Section
                 appSettingsSection
                 
@@ -115,36 +118,57 @@ struct SettingsView: View {
         }
     }
     
+    // MARK: - Theme Section
+    
+    private var themeSection: some View {
+        Section {
+            ForEach(ThemeVariant.allCases) { variant in
+                Button {
+                    HapticManager.shared.medium()
+                    themeManager.setThemeVariant(variant)
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: variant.icon)
+                            .font(.system(size: 18))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                            .symbolRenderingMode(.hierarchical)
+                            .frame(width: 28, alignment: .center)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(variant.rawValue)
+                                .font(.system(size: 17, design: .rounded))
+                                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                            Text(variant.description)
+                                .font(.system(size: 13))
+                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        }
+                        
+                        Spacer()
+                        
+                        if themeManager.currentThemeVariant == variant {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                                .symbolRenderingMode(.hierarchical)
+                        }
+                    }
+                }
+                .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+            }
+        } header: {
+            Text("Theme")
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+        } footer: {
+            Text("Choose your preferred dark theme variant. Changes apply instantly.")
+                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                .font(.system(size: 13))
+        }
+    }
+    
     // MARK: - App Settings Section
     
     private var appSettingsSection: some View {
         Section {
-            // Dark Mode (always on)
-            HStack(spacing: 12) {
-                Image(systemName: "moon.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(themeManager.perfolioTheme.tintColor)
-                    .symbolRenderingMode(.hierarchical)
-                    .frame(width: 28, alignment: .center)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Dark Mode")
-                        .font(.system(size: 17, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                    Text("Always enabled")
-                        .font(.system(size: 13))
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                }
-                
-                Spacer()
-                
-                Toggle("", isOn: .constant(true))
-                    .labelsHidden()
-                    .disabled(true)
-                    .tint(themeManager.perfolioTheme.tintColor)
-            }
-            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
-            
             // Haptic Feedback
             HStack(spacing: 12) {
                 Image(systemName: "hand.tap.fill")

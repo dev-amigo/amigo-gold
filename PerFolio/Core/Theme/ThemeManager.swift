@@ -7,11 +7,25 @@ final class ThemeManager: ObservableObject {
     @Published private(set) var perfolioTheme: PerFolioTheme
     @Published private(set) var typography = ThemeTypography()
     @Published private(set) var colorScheme: ColorScheme
+    @Published var currentThemeVariant: ThemeVariant {
+        didSet {
+            saveThemeVariant(currentThemeVariant)
+            applyThemeVariant(currentThemeVariant)
+        }
+    }
+    
+    private let themeVariantKey = "selectedThemeVariant"
 
     init(colorScheme: ColorScheme = .dark) {
         self.colorScheme = colorScheme
         self.palette = colorScheme == .dark ? .dark : .light
-        self.perfolioTheme = .gold
+        
+        // Load saved theme variant or default to dark
+        let savedVariantString = UserDefaults.standard.string(forKey: themeVariantKey) ?? ThemeVariant.dark.rawValue
+        self.currentThemeVariant = ThemeVariant(rawValue: savedVariantString) ?? .dark
+        self.perfolioTheme = PerFolioTheme.theme(for: currentThemeVariant)
+        
+        AppLogger.log("🎨 Theme Manager initialized with variant: \(currentThemeVariant.rawValue)", category: "theme")
     }
 
     func toggleScheme() {
@@ -22,5 +36,20 @@ final class ThemeManager: ObservableObject {
         guard newScheme != colorScheme else { return }
         colorScheme = newScheme
         palette = newScheme == .dark ? .dark : .light
+    }
+    
+    func setThemeVariant(_ variant: ThemeVariant) {
+        AppLogger.log("🎨 Setting theme variant to: \(variant.rawValue)", category: "theme")
+        currentThemeVariant = variant
+    }
+    
+    private func applyThemeVariant(_ variant: ThemeVariant) {
+        perfolioTheme = PerFolioTheme.theme(for: variant)
+        AppLogger.log("✅ Theme variant applied: \(variant.rawValue)", category: "theme")
+    }
+    
+    private func saveThemeVariant(_ variant: ThemeVariant) {
+        UserDefaults.standard.set(variant.rawValue, forKey: themeVariantKey)
+        AppLogger.log("💾 Theme variant saved: \(variant.rawValue)", category: "theme")
     }
 }
