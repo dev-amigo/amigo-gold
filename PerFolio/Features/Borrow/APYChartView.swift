@@ -28,6 +28,7 @@ struct APYChartView: View {
                     Spacer()
                     
                     Button {
+                        HapticManager.shared.light()
                         dismiss()
                     } label: {
                         Image(systemName: "xmark.circle.fill")

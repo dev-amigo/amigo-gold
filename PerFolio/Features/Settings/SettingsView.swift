@@ -231,7 +231,7 @@ struct SettingsView: View {
                         Text("Email Support")
                             .font(.system(size: 17, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                        Text("support@perfolio.com")
+                        Text("support@perfolio.ai")
                             .font(.system(size: 13))
                             .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     }

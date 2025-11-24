@@ -174,6 +174,7 @@ struct ActiveLoansView: View {
         return PerFolioCard(style: .secondary, padding: 20) {
             VStack(spacing: 16) {
                 Button {
+                    HapticManager.shared.light()
                     withAnimation(.spring()) {
                         if isExpanded {
                             expandedPositions.remove(position.id)
@@ -237,6 +238,7 @@ struct ActiveLoansView: View {
                     .foregroundStyle(themeManager.perfolioTheme.tintColor)
                 Spacer()
                 Button {
+                    HapticManager.shared.light()
                     if let url = URL(string: "https://etherscan.io/address/\(position.vaultAddress)") {
                         openURL(url)
                     }

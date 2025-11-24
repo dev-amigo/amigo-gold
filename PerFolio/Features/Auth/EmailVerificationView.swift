@@ -26,7 +26,10 @@ struct EmailVerificationView: View {
             VStack(spacing: 0) {
                 // Top Bar with Back Button
                 HStack {
-                    Button(action: onCancel) {
+                    Button(action: {
+                        HapticManager.shared.light()
+                        onCancel()
+                    }) {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundStyle(themeManager.perfolioTheme.tintColor)
@@ -128,7 +131,10 @@ struct EmailVerificationView: View {
                                 onCodeEntered(code)
                             }
                             
-                            Button(action: onResendCode) {
+                            Button(action: {
+                                HapticManager.shared.medium()
+                                onResendCode()
+                            }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: "arrow.clockwise")
                                         .font(.system(size: 14, weight: .semibold))

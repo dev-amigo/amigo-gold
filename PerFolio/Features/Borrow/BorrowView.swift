@@ -194,6 +194,7 @@ struct BorrowView: View {
                     Spacer()
                     
                     Button {
+                        HapticManager.shared.medium()
                         viewModel.setCollateralToMax()
                     } label: {
                         Text("MAX")
@@ -286,6 +287,7 @@ struct BorrowView: View {
     
     private func quickLTVButton(percentage: Int) -> some View {
         Button {
+            HapticManager.shared.light()
             viewModel.setQuickLTV(Decimal(percentage))
         } label: {
             Text("\(percentage)% LTV")
@@ -337,6 +339,7 @@ struct BorrowView: View {
                     )
                     
                     Button {
+                        HapticManager.shared.light()
                         viewModel.showAPYChart()
                     } label: {
                         HStack {

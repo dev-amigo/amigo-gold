@@ -204,6 +204,7 @@ struct DepositBuyView: View {
                     Spacer()
                     
                     Button {
+                        HapticManager.shared.light()
                         viewModel.resetOnMetaFlow()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -321,6 +322,7 @@ struct DepositBuyView: View {
                     Spacer()
                     
                     Button {
+                        HapticManager.shared.light()
                         viewModel.resetOnMetaFlow()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -494,6 +496,7 @@ struct DepositBuyView: View {
                     Spacer()
                     
                     Button {
+                        HapticManager.shared.light()
                         viewModel.resetOnMetaFlow()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -737,6 +740,7 @@ struct DepositBuyView: View {
                     }
                     
                     Button {
+                        HapticManager.shared.light()
                         if let url = URL(string: "https://etherscan.io/tx/\(txHash)") {
                             UIApplication.shared.open(url)
                         }

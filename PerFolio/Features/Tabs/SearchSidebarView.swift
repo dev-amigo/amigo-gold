@@ -60,6 +60,7 @@ struct SearchSidebarView: View {
             }
             Spacer()
             Button {
+                HapticManager.shared.light()
                 withAnimation {
                     isCompact.toggle()
                 }

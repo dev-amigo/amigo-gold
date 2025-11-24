@@ -151,6 +151,7 @@ struct PerFolioDashboardView: View {
                         Spacer()
                         
                         Button {
+                            HapticManager.shared.light()
                             viewModel.copyAddressToClipboard()
                             withAnimation {
                                 showCopiedToast = true
@@ -215,6 +216,7 @@ struct PerFolioDashboardView: View {
                             .scaleEffect(0.8)
                     } else if case .failed = viewModel.loadingState {
                         Button {
+                            HapticManager.shared.medium()
                             viewModel.refreshBalances()
                         } label: {
                             Image(systemName: "arrow.clockwise")

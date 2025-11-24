@@ -26,7 +26,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: - User Info
     
     var userEmail: String {
-        PrivyAuthCoordinator.shared.getUserEmail() ?? "user@perfolio.com"
+        PrivyAuthCoordinator.shared.getUserEmail() ?? "user@perfolio.ai"
     }
     
     var walletAddress: String? {
@@ -98,18 +98,18 @@ final class SettingsViewModel: ObservableObject {
     }
     
     func openEmail() {
-        if let url = URL(string: "mailto:support@perfolio.com?subject=PerFolio Support Request") {
+        if let url = URL(string: "mailto:support@perfolio.ai?subject=PerFolio Support Request") {
             UIApplication.shared.open(url)
         }
     }
     
     func openTermsOfService() {
-        safariURL = URL(string: "https://perfolio.com/terms")
+        safariURL = URL(string: "https://perfolio.ai/terms")
         showingSafari = true
     }
     
     func openPrivacyPolicy() {
-        safariURL = URL(string: "https://perfolio.com/privacy")
+        safariURL = URL(string: "https://perfolio.ai/privacy")
         showingSafari = true
     }
     
