@@ -4,7 +4,7 @@ struct PerFolioDashboardView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @StateObject private var viewModel = DashboardViewModel()
     @State private var showCopiedToast = false
-    @State private var showLogoutAlert = false
+    @State private var showSettings = false
     var onLogout: (() -> Void)?
     
     var body: some View {
@@ -23,15 +23,12 @@ struct PerFolioDashboardView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
-                        showLogoutAlert = true
+                        HapticManager.shared.light()
+                        showSettings = true
                     } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .font(.system(size: 16, weight: .semibold))
-                            Text("Logout")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        }
-                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
                     }
                 }
                 
@@ -41,13 +38,8 @@ struct PerFolioDashboardView: View {
                         .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                 }
             }
-            .alert("Logout", isPresented: $showLogoutAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Logout", role: .destructive) {
-                    handleLogout()
-                }
-            } message: {
-                Text("Are you sure you want to logout?")
+            .sheet(isPresented: $showSettings) {
+                SettingsView(onLogout: onLogout)
             }
         }
         .overlay(alignment: .top) {

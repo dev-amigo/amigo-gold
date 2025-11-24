@@ -32,7 +32,12 @@ struct PerFolioButton: View {
     }
     
     var body: some View {
-        Button(action: { if !isDisabled && !isLoading { action() } }) {
+        Button(action: { 
+            if !isDisabled && !isLoading { 
+                HapticManager.shared.medium()
+                action() 
+            } 
+        }) {
             HStack(spacing: 10) {
                 if isLoading {
                     ProgressView()

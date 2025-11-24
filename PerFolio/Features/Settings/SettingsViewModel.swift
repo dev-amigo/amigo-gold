@@ -1,0 +1,138 @@
+import SwiftUI
+import Combine
+
+@MainActor
+final class SettingsViewModel: ObservableObject {
+    
+    // MARK: - Published Properties
+    
+    @Published var isHapticEnabled: Bool {
+        didSet {
+            HapticManager.shared.isHapticEnabled = isHapticEnabled
+        }
+    }
+    
+    @Published var isSoundEnabled: Bool {
+        didSet {
+            HapticManager.shared.isSoundEnabled = isSoundEnabled
+        }
+    }
+    
+    @Published var showingSafari = false
+    @Published var safariURL: URL?
+    @Published var showingLogoutConfirmation = false
+    @Published var addressCopied = false
+    
+    // MARK: - User Info
+    
+    var userEmail: String {
+        PrivyAuthCoordinator.shared.getUserEmail() ?? "user@perfolio.com"
+    }
+    
+    var walletAddress: String? {
+        UserDefaults.standard.string(forKey: "userWalletAddress")
+    }
+    
+    // MARK: - App Info
+    
+    var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+    }
+    
+    var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+    
+    // MARK: - Libraries
+    
+    struct Library: Identifiable {
+        let id = UUID()
+        let name: String
+        let version: String
+        let licenseURL: URL?
+    }
+    
+    let libraries: [Library] = [
+        Library(
+            name: "Privy SDK",
+            version: "1.0.0",
+            licenseURL: URL(string: "https://github.com/privy-io/privy-ios")
+        ),
+        Library(
+            name: "Swift",
+            version: "6.0",
+            licenseURL: URL(string: "https://swift.org/LICENSE.txt")
+        ),
+        Library(
+            name: "SwiftUI",
+            version: "iOS 18.6",
+            licenseURL: URL(string: "https://developer.apple.com/documentation/swiftui")
+        )
+    ]
+    
+    // MARK: - Initialization
+    
+    init() {
+        self.isHapticEnabled = HapticManager.shared.isHapticEnabled
+        self.isSoundEnabled = HapticManager.shared.isSoundEnabled
+    }
+    
+    // MARK: - Actions
+    
+    func truncatedAddress(_ address: String) -> String {
+        guard address.count > 10 else { return address }
+        let start = address.prefix(6)
+        let end = address.suffix(4)
+        return "\(start)...\(end)"
+    }
+    
+    func copyAddress(_ address: String) {
+        UIPasteboard.general.string = address
+        addressCopied = true
+        
+        // Reset after 2 seconds
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            addressCopied = false
+        }
+    }
+    
+    func openEmail() {
+        if let url = URL(string: "mailto:support@perfolio.com?subject=PerFolio Support Request") {
+            UIApplication.shared.open(url)
+        }
+    }
+    
+    func openTermsOfService() {
+        safariURL = URL(string: "https://perfolio.com/terms")
+        showingSafari = true
+    }
+    
+    func openPrivacyPolicy() {
+        safariURL = URL(string: "https://perfolio.com/privacy")
+        showingSafari = true
+    }
+    
+    func openLibraryLicense(_ library: Library) {
+        safariURL = library.licenseURL
+        showingSafari = true
+    }
+    
+    func showLogoutConfirmation() {
+        showingLogoutConfirmation = true
+    }
+    
+    func logout() {
+        // Clear user data
+        UserDefaults.standard.removeObject(forKey: "userWalletAddress")
+        
+        // Logout from Privy
+        Task {
+            await PrivyAuthCoordinator.shared.logout()
+            
+            // Navigate to login (handled by AppRootView)
+            NotificationCenter.default.post(name: NSNotification.Name("UserDidLogout"), object: nil)
+        }
+    }
+}
+

@@ -14,7 +14,8 @@ struct ExpandableSection<Content: View>: View {
         VStack(spacing: 0) {
             // Header (always visible)
             Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                HapticManager.shared.light()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     isExpanded.toggle()
                 }
             } label: {
@@ -64,10 +65,7 @@ struct ExpandableSection<Content: View>: View {
             // Content (expandable)
             if isExpanded {
                 content()
-                    .transition(.asymmetric(
-                        insertion: .push(from: .top).combined(with: .opacity),
-                        removal: .push(from: .bottom).combined(with: .opacity)
-                    ))
+                    .transition(.scale(scale: 0.95).combined(with: .opacity))
                     .padding(.top, 12)
             }
         }
