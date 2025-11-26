@@ -25,6 +25,12 @@ struct DepositInfoTip: Tip {
             #Rule(Self.$shouldShow) { $0 == true }
         ]
     }
+    
+    var options: [TipOption] {
+        [
+            Tips.IgnoresDisplayFrequency(true)
+        ]
+    }
 }
 
 /// Manual tip for Swap to PAXG - can be shown anytime
@@ -47,6 +53,12 @@ struct SwapInfoTip: Tip {
     var rules: [Rule] {
         [
             #Rule(Self.$shouldShow) { $0 == true }
+        ]
+    }
+    
+    var options: [TipOption] {
+        [
+            Tips.IgnoresDisplayFrequency(true)
         ]
     }
 }
@@ -73,6 +85,12 @@ struct BorrowInfoTip: Tip {
             #Rule(Self.$shouldShow) { $0 == true }
         ]
     }
+    
+    var options: [TipOption] {
+        [
+            Tips.IgnoresDisplayFrequency(true)
+        ]
+    }
 }
 
 /// Manual tip for Manage Loans - can be shown anytime
@@ -97,6 +115,12 @@ struct LoansInfoTip: Tip {
             #Rule(Self.$shouldShow) { $0 == true }
         ]
     }
+    
+    var options: [TipOption] {
+        [
+            Tips.IgnoresDisplayFrequency(true)
+        ]
+    }
 }
 
 /// Manual tip for Withdraw - can be shown anytime
@@ -119,6 +143,12 @@ struct WithdrawInfoTip: Tip {
     var rules: [Rule] {
         [
             #Rule(Self.$shouldShow) { $0 == true }
+        ]
+    }
+    
+    var options: [TipOption] {
+        [
+            Tips.IgnoresDisplayFrequency(true)
         ]
     }
 }

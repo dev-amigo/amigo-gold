@@ -211,41 +211,51 @@ struct OnboardingTimelineView: View {
     private func handleInfoTap(stepIndex: Int) {
         HapticManager.shared.light()
         
-        // Trigger manual tip display by setting parameter
+        // Trigger manual tip display by toggling parameter
         Task { @MainActor in
             switch stepIndex {
             case 0:
-                DepositInfoTip.shouldShow = true
-                // Reset after a delay to allow showing again
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                DepositInfoTip.shouldShow = false
+                // If already shown, invalidate first to allow re-showing
+                if DepositInfoTip.shouldShow {
+                    depositInfoTip.invalidate(reason: .tipClosed)
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                }
+                DepositInfoTip.shouldShow.toggle()
                 
             case 1:
-                SwapInfoTip.shouldShow = true
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                SwapInfoTip.shouldShow = false
+                if SwapInfoTip.shouldShow {
+                    swapInfoTip.invalidate(reason: .tipClosed)
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                }
+                SwapInfoTip.shouldShow.toggle()
                 
             case 2:
-                BorrowInfoTip.shouldShow = true
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                BorrowInfoTip.shouldShow = false
+                if BorrowInfoTip.shouldShow {
+                    borrowInfoTip.invalidate(reason: .tipClosed)
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                }
+                BorrowInfoTip.shouldShow.toggle()
                 
             case 3:
-                LoansInfoTip.shouldShow = true
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                LoansInfoTip.shouldShow = false
+                if LoansInfoTip.shouldShow {
+                    loansInfoTip.invalidate(reason: .tipClosed)
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                }
+                LoansInfoTip.shouldShow.toggle()
                 
             case 4:
-                WithdrawInfoTip.shouldShow = true
-                try? await Task.sleep(nanoseconds: 100_000_000)
-                WithdrawInfoTip.shouldShow = false
+                if WithdrawInfoTip.shouldShow {
+                    withdrawInfoTip.invalidate(reason: .tipClosed)
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                }
+                WithdrawInfoTip.shouldShow.toggle()
                 
             default:
                 break
             }
         }
         
-        AppLogger.log("ℹ️ Manual info tip triggered for step \(stepIndex)", category: "onboarding")
+        AppLogger.log("ℹ️ Manual info tip toggled for step \(stepIndex)", category: "onboarding")
     }
     
     private func handleTipAction(_ actionId: String, stepIndex: Int) {
