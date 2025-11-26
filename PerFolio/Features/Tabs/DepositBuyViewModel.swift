@@ -210,6 +210,14 @@ final class DepositBuyViewModel: ObservableObject {
             if usdcBalance > 0 {
                 viewState = .success
                 AppLogger.log("✅ USDC balance updated: \(usdcBalance)", category: "depositbuy")
+                
+                // Log deposit activity
+                if let quote = currentQuote {
+                    ActivityService.shared.logDeposit(
+                        amount: quote.usdcAmount,
+                        currency: "USDC"
+                    )
+                }
             }
         }
     }
@@ -329,6 +337,17 @@ final class DepositBuyViewModel: ObservableObject {
             swapState = .success(txHash)
             
             AppLogger.log("✅ Swap executed: \(txHash)", category: "depositbuy")
+            
+            // Log swap activity
+            if let quote = swapQuote {
+                ActivityService.shared.logSwap(
+                    fromAmount: quote.fromAmount,
+                    fromToken: quote.fromToken.symbol,
+                    toAmount: quote.toAmount,
+                    toToken: quote.toToken.symbol,
+                    txHash: txHash
+                )
+            }
             
             // Refresh balances
             try? await Task.sleep(nanoseconds: ServiceConstants.balanceRefreshDelay)

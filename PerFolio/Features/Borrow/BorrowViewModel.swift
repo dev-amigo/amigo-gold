@@ -250,6 +250,13 @@ final class BorrowViewModel: ObservableObject {
             transactionState = .success(positionId: positionId)
             AppLogger.log("🎉 Borrow successful! Position: #\(positionId)", category: "borrow")
             
+            // Log borrow activity
+            ActivityService.shared.logBorrow(
+                amount: borrow,
+                collateral: collateral,
+                txHash: nil
+            )
+            
             // Refresh balance
             await loadPAXGBalance()
             

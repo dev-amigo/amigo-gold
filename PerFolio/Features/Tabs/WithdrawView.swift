@@ -80,13 +80,29 @@ struct WithdrawSectionContent: View {
     }
     
     private func handleTransakDismiss() {
+        // Store amount before dismissing
+        let withdrawAmount = viewModel.usdcAmount
+        
         showingTransakWidget = false
         transakURL = nil
         
         // Refresh balance after widget closes
         Task {
             try? await Task.sleep(nanoseconds: 2_000_000_000)  // Wait 2 seconds
+            let oldBalance = viewModel.usdcBalance
             await viewModel.loadBalance()
+            
+            // Check if balance decreased (withdrawal likely successful)
+            if viewModel.usdcBalance < oldBalance {
+                // Log withdrawal activity
+                if let amount = Decimal(string: withdrawAmount) {
+                    ActivityService.shared.logWithdraw(
+                        amount: amount,
+                        currency: "USDC"
+                    )
+                    AppLogger.log("✅ Withdrawal logged to activity", category: "withdraw")
+                }
+            }
         }
     }
     
