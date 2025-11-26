@@ -5,17 +5,25 @@ struct PerFolioDashboardView: View {
     @StateObject private var viewModel = DashboardViewModel()
     @State private var showCopiedToast = false
     @State private var showSettings = false
+    @State private var selectedTab: String = "dashboard"
     var onLogout: (() -> Void)?
+    var onNavigateToTab: ((String) -> Void)?
+    
+    // Check if user is fresh (no USDC and no PAXG)
+    private var isFreshUser: Bool {
+        viewModel.usdcBalance == 0 && viewModel.paxgBalance == 0
+    }
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    goldenHeroCard
-                    walletConnectionCard
-                    yourGoldHoldingsCard
-                    statisticsSection
-                    paxgPriceChartSection
+                    // Show onboarding timeline for fresh users, regular dashboard for others
+                    if isFreshUser {
+                        onboardingSection
+                    } else {
+                        regularDashboardContent
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 24)
@@ -72,6 +80,46 @@ struct PerFolioDashboardView: View {
         
         // Navigate back to landing
         onLogout?()
+    }
+    
+    // MARK: - Onboarding Section
+    
+    private var onboardingSection: some View {
+        VStack(spacing: 24) {
+            // Welcome message
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Welcome to PerFolio! 👋")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                
+                Text("Your journey to gold-backed finance starts here. Follow these steps to get started.")
+                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    .lineSpacing(4)
+            }
+            .padding(.top, 8)
+            
+            // Onboarding timeline
+            OnboardingTimelineView { destination in
+                handleOnboardingNavigation(destination)
+            }
+            .environmentObject(themeManager)
+        }
+    }
+    
+    private var regularDashboardContent: some View {
+        VStack(spacing: 24) {
+            goldenHeroCard
+            walletConnectionCard
+            yourGoldHoldingsCard
+            statisticsSection
+            paxgPriceChartSection
+        }
+    }
+    
+    private func handleOnboardingNavigation(_ destination: String) {
+        AppLogger.log("📍 Dashboard navigating to: \(destination)", category: "dashboard")
+        onNavigateToTab?(destination)
     }
     
     // MARK: - Golden Hero Card

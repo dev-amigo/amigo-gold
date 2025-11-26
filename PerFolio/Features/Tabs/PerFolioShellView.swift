@@ -20,11 +20,16 @@ struct PerFolioShellView: View {
             
             // Phase 3-4: Dashboard + Wallet + Borrow tabs + Active Loans
             TabView(selection: $selectedTab) {
-                PerFolioDashboardView(onLogout: onLogout)
-                    .tabItem {
-                        Label("Dashboard", systemImage: "chart.line.uptrend.xyaxis")
+                PerFolioDashboardView(
+                    onLogout: onLogout,
+                    onNavigateToTab: { destination in
+                        navigateToTab(destination)
                     }
-                    .tag(Tab.dashboard)
+                )
+                .tabItem {
+                    Label("Dashboard", systemImage: "chart.line.uptrend.xyaxis")
+                }
+                .tag(Tab.dashboard)
                 
                 DepositBuyView()
                     .tabItem {
@@ -46,6 +51,26 @@ struct PerFolioShellView: View {
             }
             .tint(themeManager.perfolioTheme.tintColor)
         }
+    }
+    
+    // MARK: - Navigation Helper
+    
+    private func navigateToTab(_ destination: String) {
+        withAnimation {
+            switch destination.lowercased() {
+            case "wallet":
+                selectedTab = .wallet
+            case "borrow":
+                selectedTab = .borrow
+            case "loans":
+                selectedTab = .loans
+            case "dashboard":
+                selectedTab = .dashboard
+            default:
+                AppLogger.log("⚠️ Unknown navigation destination: \(destination)", category: "shell")
+            }
+        }
+        HapticManager.shared.light()
     }
 }
 
