@@ -146,9 +146,6 @@ struct OnboardingTimelineView: View {
                         onTipAction: { actionId in
                             handleTipAction(actionId, stepIndex: index)
                         },
-                        onInfoTap: {
-                            handleInfoTap(stepIndex: index)
-                        },
                         action: step.action
                     )
                     .environmentObject(themeManager)
@@ -206,30 +203,6 @@ struct OnboardingTimelineView: View {
         case 4: return withdrawInfoTip
         default: return nil
         }
-    }
-    
-    private func handleInfoTap(stepIndex: Int) {
-        HapticManager.shared.light()
-        
-        // Invalidate the tip so it can be shown again
-        Task { @MainActor in
-            switch stepIndex {
-            case 0:
-                await depositInfoTip.resetEligibility()
-            case 1:
-                await swapInfoTip.resetEligibility()
-            case 2:
-                await borrowInfoTip.resetEligibility()
-            case 3:
-                await loansInfoTip.resetEligibility()
-            case 4:
-                await withdrawInfoTip.resetEligibility()
-            default:
-                break
-            }
-        }
-        
-        AppLogger.log("ℹ️ Manual info tip invalidated for step \(stepIndex), will re-show", category: "onboarding")
     }
     
     private func handleTipAction(_ actionId: String, stepIndex: Int) {

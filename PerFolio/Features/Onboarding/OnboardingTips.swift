@@ -3,8 +3,11 @@ import TipKit
 
 // MARK: - Manual Info Tips (Always Available)
 
-/// Manual tip for Deposit USDC - can be shown anytime
+/// Manual tip for Deposit USDC - only shows on button tap
 struct DepositInfoTip: Tip {
+    @Parameter
+    static var shouldDisplay: Bool = false
+    
     var title: Text {
         Text("What is USDC?")
     }
@@ -17,6 +20,14 @@ struct DepositInfoTip: Tip {
         Image(systemName: "dollarsign.circle.fill")
     }
     
+    var rules: [Rule] {
+        [
+            #Rule(Self.$shouldDisplay) {
+                $0 == true
+            }
+        ]
+    }
+    
     var options: [TipOption] {
         [
             Tips.IgnoresDisplayFrequency(true)
@@ -24,8 +35,11 @@ struct DepositInfoTip: Tip {
     }
 }
 
-/// Manual tip for Swap to PAXG - can be shown anytime
+/// Manual tip for Swap to PAXG - only shows on button tap
 struct SwapInfoTip: Tip {
+    @Parameter
+    static var shouldDisplay: Bool = false
+    
     var title: Text {
         Text("What is PAXG?")
     }
@@ -38,6 +52,14 @@ struct SwapInfoTip: Tip {
         Image(systemName: "sparkles")
     }
     
+    var rules: [Rule] {
+        [
+            #Rule(Self.$shouldDisplay) {
+                $0 == true
+            }
+        ]
+    }
+    
     var options: [TipOption] {
         [
             Tips.IgnoresDisplayFrequency(true)
@@ -45,8 +67,11 @@ struct SwapInfoTip: Tip {
     }
 }
 
-/// Manual tip for Borrow USDC - can be shown anytime
+/// Manual tip for Borrow USDC - only shows on button tap
 struct BorrowInfoTip: Tip {
+    @Parameter
+    static var shouldDisplay: Bool = false
+    
     var title: Text {
         Text("How Borrowing Works")
     }
@@ -59,6 +84,14 @@ struct BorrowInfoTip: Tip {
         Image(systemName: "banknote.fill")
     }
     
+    var rules: [Rule] {
+        [
+            #Rule(Self.$shouldDisplay) {
+                $0 == true
+            }
+        ]
+    }
+    
     var options: [TipOption] {
         [
             Tips.IgnoresDisplayFrequency(true)
@@ -66,8 +99,11 @@ struct BorrowInfoTip: Tip {
     }
 }
 
-/// Manual tip for Manage Loans - can be shown anytime
+/// Manual tip for Manage Loans - only shows on button tap
 struct LoansInfoTip: Tip {
+    @Parameter
+    static var shouldDisplay: Bool = false
+    
     var title: Text {
         Text("Monitor Your Loans")
     }
@@ -80,6 +116,14 @@ struct LoansInfoTip: Tip {
         Image(systemName: "chart.line.uptrend.xyaxis")
     }
     
+    var rules: [Rule] {
+        [
+            #Rule(Self.$shouldDisplay) {
+                $0 == true
+            }
+        ]
+    }
+    
     var options: [TipOption] {
         [
             Tips.IgnoresDisplayFrequency(true)
@@ -87,8 +131,11 @@ struct LoansInfoTip: Tip {
     }
 }
 
-/// Manual tip for Withdraw - can be shown anytime
+/// Manual tip for Withdraw - only shows on button tap
 struct WithdrawInfoTip: Tip {
+    @Parameter
+    static var shouldDisplay: Bool = false
+    
     var title: Text {
         Text("Cash Out to Your Bank")
     }
@@ -99,6 +146,14 @@ struct WithdrawInfoTip: Tip {
     
     var image: Image? {
         Image(systemName: "building.columns.fill")
+    }
+    
+    var rules: [Rule] {
+        [
+            #Rule(Self.$shouldDisplay) {
+                $0 == true
+            }
+        ]
     }
     
     var options: [TipOption] {
