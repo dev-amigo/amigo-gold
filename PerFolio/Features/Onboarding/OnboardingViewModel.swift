@@ -1,10 +1,11 @@
 import SwiftUI
+import SwiftData
 import Combine
 
 /// ViewModel for managing onboarding timeline state
 @MainActor
 final class OnboardingViewModel: ObservableObject {
-    @Published var isExpanded: Bool = true
+    @Published var isExpanded: Bool = false // Start collapsed
     @Published var hasDepositedUSDC: Bool = false
     @Published var hasSwappedToPAXG: Bool = false
     @Published var hasBorrowed: Bool = false
@@ -13,12 +14,42 @@ final class OnboardingViewModel: ObservableObject {
     
     private let activityService = ActivityService.shared
     private var cancellables = Set<AnyCancellable>()
+    private var dashboardViewModel: DashboardViewModel?
     
-    init() {
-        // Load completion status from activities
+    init() {}
+    
+    // MARK: - Setup
+    
+    func setup(modelContext: ModelContext, dashboardViewModel: DashboardViewModel) {
+        self.dashboardViewModel = dashboardViewModel
+        
+        // Observe dashboard balances and positions for real-time updates
+        observeDashboardChanges()
+        
+        // Load initial completion status
         Task {
             await loadCompletionStatus()
         }
+    }
+    
+    private func observeDashboardChanges() {
+        guard let dashboardViewModel = dashboardViewModel else { return }
+        
+        // Observe balance changes to update deposit/swap completion
+        dashboardViewModel.$usdcBalance
+            .combineLatest(dashboardViewModel.$paxgBalance)
+            .sink { [weak self] usdc, paxg in
+                self?.hasDepositedUSDC = (usdc?.decimalBalance ?? 0) > 0
+                self?.hasSwappedToPAXG = (paxg?.decimalBalance ?? 0) > 0
+            }
+            .store(in: &cancellables)
+        
+        // Observe borrow positions to update borrow completion
+        dashboardViewModel.$borrowPositions
+            .sink { [weak self] positions in
+                self?.hasBorrowed = !positions.isEmpty
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - Computed Properties

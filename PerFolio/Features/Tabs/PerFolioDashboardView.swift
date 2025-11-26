@@ -1,31 +1,26 @@
 import SwiftUI
+import SwiftData
 
 struct PerFolioDashboardView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @StateObject private var viewModel = DashboardViewModel()
+    @StateObject private var onboardingViewModel = OnboardingViewModel()
+    @Environment(\.modelContext) private var modelContext
     @State private var showCopiedToast = false
     @State private var showSettings = false
     @State private var selectedTab: String = "dashboard"
     var onLogout: (() -> Void)?
     var onNavigateToTab: ((String) -> Void)?
     
-    // Check if user is fresh (no USDC and no PAXG)
-    private var isFreshUser: Bool {
-        let usdcAmount = viewModel.usdcBalance?.decimalBalance ?? 0
-        let paxgAmount = viewModel.paxgBalance?.decimalBalance ?? 0
-        return usdcAmount == 0 && paxgAmount == 0
-    }
-    
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Show onboarding timeline for fresh users, regular dashboard for others
-                    if isFreshUser {
-                        onboardingSection
-                    } else {
-                        regularDashboardContent
-                    }
+                    // Show onboarding timeline for ALL users at the top (collapsed by default)
+                    onboardingSection
+                    
+                    // Regular dashboard content below
+                    regularDashboardContent
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 24)
@@ -68,6 +63,9 @@ struct PerFolioDashboardView: View {
             } else {
                 AppLogger.log("⚠️ No wallet address found in storage. User may need to re-login.", category: "dashboard")
             }
+            
+            // Set up onboarding timeline
+            onboardingViewModel.setup(modelContext: modelContext, dashboardViewModel: viewModel)
         }
     }
     
@@ -87,26 +85,13 @@ struct PerFolioDashboardView: View {
     // MARK: - Onboarding Section
     
     private var onboardingSection: some View {
-        VStack(spacing: 24) {
-            // Welcome message
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Welcome to PerFolio! 👋")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                
-                Text("Your journey to gold-backed finance starts here. Follow these steps to get started.")
-                    .font(.system(size: 16, weight: .regular, design: .rounded))
-                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                    .lineSpacing(4)
+        OnboardingTimelineView(
+            onboardingViewModel: onboardingViewModel,
+            onNavigate: { tab in
+                handleOnboardingNavigation(tab)
             }
-            .padding(.top, 8)
-            
-            // Onboarding timeline
-            OnboardingTimelineView { destination in
-                handleOnboardingNavigation(destination)
-            }
-            .environmentObject(themeManager)
-        }
+        )
+        .environmentObject(themeManager)
     }
     
     private var regularDashboardContent: some View {

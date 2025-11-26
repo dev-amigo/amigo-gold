@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Game Center-style onboarding timeline view for first-time users
+/// Game Center-style onboarding timeline view for all users
 struct OnboardingTimelineView: View {
-    @StateObject private var viewModel = OnboardingViewModel()
+    @ObservedObject var onboardingViewModel: OnboardingViewModel
     @EnvironmentObject var themeManager: ThemeManager
     
     // Callback for navigation
@@ -13,11 +13,11 @@ struct OnboardingTimelineView: View {
             // Header - Always visible
             headerView
                 .onTapGesture {
-                    viewModel.toggleExpanded()
+                    onboardingViewModel.toggleExpanded()
                 }
             
             // Expandable content
-            if viewModel.isExpanded {
+            if onboardingViewModel.isExpanded {
                 timelineContent
                     .transition(.asymmetric(
                         insertion: .scale(scale: 0.95, anchor: .top).combined(with: .opacity),
@@ -40,11 +40,9 @@ struct OnboardingTimelineView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                .stroke(Color.white.opacity(0.3), lineWidth: 2)
         )
         .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
     }
     
     // MARK: - Header View
@@ -68,7 +66,7 @@ struct OnboardingTimelineView: View {
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                 
-                Text("\(viewModel.completedStepsCount) of \(viewModel.totalSteps) steps completed")
+                Text("\(onboardingViewModel.completedStepsCount) of \(onboardingViewModel.totalSteps) steps completed")
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.8))
             }
@@ -84,12 +82,12 @@ struct OnboardingTimelineView: View {
                         .frame(width: 32, height: 32)
                     
                     Circle()
-                        .trim(from: 0, to: viewModel.progressPercentage)
+                        .trim(from: 0, to: onboardingViewModel.progressPercentage)
                         .stroke(Color.white, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                         .frame(width: 32, height: 32)
                         .rotationEffect(.degrees(-90))
                     
-                    if viewModel.allStepsCompleted {
+                    if onboardingViewModel.allStepsCompleted {
                         Image(systemName: "checkmark")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(.white)
@@ -97,10 +95,10 @@ struct OnboardingTimelineView: View {
                 }
                 
                 // Expand/collapse chevron
-                Image(systemName: viewModel.isExpanded ? "chevron.up" : "chevron.down")
+                Image(systemName: onboardingViewModel.isExpanded ? "chevron.up" : "chevron.down")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white)
-                    .rotationEffect(.degrees(viewModel.isExpanded ? 0 : 180))
+                    .rotationEffect(.degrees(onboardingViewModel.isExpanded ? 0 : 180))
             }
         }
         .padding(16)
@@ -118,7 +116,7 @@ struct OnboardingTimelineView: View {
             
             // Steps
             VStack(spacing: 12) {
-                ForEach(viewModel.getSteps(navigationHandler: handleNavigation), id: \.number) { step in
+                ForEach(onboardingViewModel.getSteps(navigationHandler: handleNavigation), id: \.number) { step in
                     TimelineStepCard(
                         stepNumber: step.number,
                         title: step.title,
@@ -141,9 +139,9 @@ struct OnboardingTimelineView: View {
         onNavigate?(destination)
         
         // Collapse after navigation
-        if viewModel.isExpanded {
+        if onboardingViewModel.isExpanded {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                viewModel.toggleExpanded()
+                onboardingViewModel.toggleExpanded()
             }
         }
     }
