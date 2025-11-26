@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Combine
+import TipKit
 
 /// ViewModel for managing onboarding timeline state
 @MainActor
@@ -11,12 +12,23 @@ final class OnboardingViewModel: ObservableObject {
     @Published var hasBorrowed: Bool = false
     @Published var hasVisitedLoans: Bool = false
     @Published var hasWithdrawn: Bool = false
+    @Published var isTutorialComplete: Bool = false
     
     private let activityService = ActivityService.shared
     private var cancellables = Set<AnyCancellable>()
     private var dashboardViewModel: DashboardViewModel?
     
-    init() {}
+    private let tutorialCompleteKey = "onboardingTutorialComplete"
+    
+    init() {
+        // Check if tutorial was completed before
+        isTutorialComplete = UserDefaults.standard.bool(forKey: tutorialCompleteKey)
+        
+        // Keep expanded until tutorial is complete
+        if !isTutorialComplete {
+            isExpanded = true
+        }
+    }
     
     // MARK: - Setup
     
@@ -99,6 +111,39 @@ final class OnboardingViewModel: ObservableObject {
     func markLoansVisited() {
         hasVisitedLoans = true
         UserDefaults.standard.set(true, forKey: "hasVisitedLoansTab")
+    }
+    
+    func completeTutorial() {
+        isTutorialComplete = true
+        UserDefaults.standard.set(true, forKey: tutorialCompleteKey)
+        
+        // Collapse timeline after tutorial completion
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            isExpanded = false
+        }
+        
+        AppLogger.log("✅ Onboarding tutorial completed", category: "onboarding")
+    }
+    
+    func resetTutorial() {
+        isTutorialComplete = false
+        UserDefaults.standard.set(false, forKey: tutorialCompleteKey)
+        
+        // Reset all tip parameters
+        DepositUSDCTip().invalidate(reason: .tipClosed)
+        SwapToPAXGTip.hasSeenDepositTip = false
+        SwapToPAXGTip().invalidate(reason: .tipClosed)
+        BorrowUSDCTip.hasSeenSwapTip = false
+        BorrowUSDCTip().invalidate(reason: .tipClosed)
+        ManageLoansTip.hasSeenBorrowTip = false
+        ManageLoansTip().invalidate(reason: .tipClosed)
+        WithdrawBankTip.hasSeenLoansTip = false
+        WithdrawBankTip().invalidate(reason: .tipClosed)
+        
+        // Re-expand timeline
+        isExpanded = true
+        
+        AppLogger.log("🔄 Onboarding tutorial reset", category: "onboarding")
     }
     
     // MARK: - Step Definitions

@@ -55,7 +55,7 @@ struct PerFolioShellView: View {
                 ActiveLoansView()
             }
             
-            Tab("Activity", systemImage: "clock.arrow.circlepath", value: AppTab.activity) {
+            Tab("Activity", systemImage: "clock.arrow.circlepath", value: AppTab.activity, role: .search) {
                 ActivityView()
             }
         }

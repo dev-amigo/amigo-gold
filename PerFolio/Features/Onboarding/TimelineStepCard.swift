@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 
 /// Individual timeline step - compact design with colored icons
 struct TimelineStepCard: View {
@@ -8,6 +9,8 @@ struct TimelineStepCard: View {
     let isCompleted: Bool
     let stepColor: Color
     let stepIcon: String
+    let tip: (any Tip)?
+    let onTipAction: ((String) -> Void)?
     let action: () -> Void
     
     @EnvironmentObject var themeManager: ThemeManager
@@ -60,10 +63,28 @@ struct TimelineStepCard: View {
                     )
                 }
                 .padding(.top, 2)
+                .if(tip != nil) { view in
+                    view.popoverTip(tip!, arrowEdge: .bottom) { action in
+                        onTipAction?(action.id)
+                    }
+                }
             }
         }
         .padding(.vertical, 12)
         .opacity(isCompleted ? 0.6 : 1.0)
+    }
+}
+
+// MARK: - View Extension for Conditional Modifiers
+
+extension View {
+    @ViewBuilder
+    func `if`<Transform: View>(_ condition: Bool, transform: (Self) -> Transform) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
     }
 }
 

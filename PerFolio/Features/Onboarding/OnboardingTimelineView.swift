@@ -1,12 +1,20 @@
 import SwiftUI
+import TipKit
 
-/// Game Center-style onboarding timeline view for all users
+/// Game Center-style onboarding timeline view for all users with tutorial tips
 struct OnboardingTimelineView: View {
     @ObservedObject var onboardingViewModel: OnboardingViewModel
     @EnvironmentObject var themeManager: ThemeManager
     
     // Callback for navigation
     var onNavigate: ((String) -> Void)?
+    
+    // Tutorial tips
+    let depositTip = DepositUSDCTip()
+    let swapTip = SwapToPAXGTip()
+    let borrowTip = BorrowUSDCTip()
+    let loansTip = ManageLoansTip()
+    let withdrawTip = WithdrawBankTip()
     
     var body: some View {
         VStack(spacing: 0) {
@@ -116,7 +124,7 @@ struct OnboardingTimelineView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
             
-            // Steps with arrow separators
+            // Steps with arrow separators and tutorial tips
             VStack(spacing: 0) {
                 ForEach(Array(onboardingViewModel.getSteps(navigationHandler: handleNavigation).enumerated()), id: \.element.id) { index, step in
                     TimelineStepCard(
@@ -126,6 +134,10 @@ struct OnboardingTimelineView: View {
                         isCompleted: step.isCompleted,
                         stepColor: step.color,
                         stepIcon: step.icon,
+                        tip: onboardingViewModel.isTutorialComplete ? nil : getTipForStep(index),
+                        onTipAction: { actionId in
+                            handleTipAction(actionId, stepIndex: index)
+                        },
                         action: step.action
                     )
                     .environmentObject(themeManager)
@@ -153,11 +165,68 @@ struct OnboardingTimelineView: View {
         AppLogger.log("📍 Navigating to: \(destination)", category: "onboarding")
         onNavigate?(destination)
         
-        // Collapse after navigation
-        if onboardingViewModel.isExpanded {
+        // Collapse after navigation (only if tutorial is complete)
+        if onboardingViewModel.isExpanded && onboardingViewModel.isTutorialComplete {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 onboardingViewModel.toggleExpanded()
             }
+        }
+    }
+    
+    // MARK: - Tip Helpers
+    
+    private func getTipForStep(_ index: Int) -> (any Tip)? {
+        switch index {
+        case 0: return depositTip
+        case 1: return swapTip
+        case 2: return borrowTip
+        case 3: return loansTip
+        case 4: return withdrawTip
+        default: return nil
+        }
+    }
+    
+    private func handleTipAction(_ actionId: String, stepIndex: Int) {
+        HapticManager.shared.medium()
+        
+        switch stepIndex {
+        case 0: // Deposit tip
+            if actionId == "next" {
+                depositTip.invalidate(reason: .actionPerformed)
+                SwapToPAXGTip.hasSeenDepositTip = true
+                AppLogger.log("✅ Deposit tip completed, showing swap tip", category: "onboarding")
+            }
+            
+        case 1: // Swap tip
+            if actionId == "next" {
+                swapTip.invalidate(reason: .actionPerformed)
+                BorrowUSDCTip.hasSeenSwapTip = true
+                AppLogger.log("✅ Swap tip completed, showing borrow tip", category: "onboarding")
+            }
+            
+        case 2: // Borrow tip
+            if actionId == "next" {
+                borrowTip.invalidate(reason: .actionPerformed)
+                ManageLoansTip.hasSeenBorrowTip = true
+                AppLogger.log("✅ Borrow tip completed, showing loans tip", category: "onboarding")
+            }
+            
+        case 3: // Loans tip
+            if actionId == "next" {
+                loansTip.invalidate(reason: .actionPerformed)
+                WithdrawBankTip.hasSeenLoansTip = true
+                AppLogger.log("✅ Loans tip completed, showing withdraw tip", category: "onboarding")
+            }
+            
+        case 4: // Withdraw tip (last one)
+            if actionId == "finish" {
+                withdrawTip.invalidate(reason: .actionPerformed)
+                onboardingViewModel.completeTutorial()
+                AppLogger.log("🎉 Tutorial finished!", category: "onboarding")
+            }
+            
+        default:
+            break
         }
     }
 }
