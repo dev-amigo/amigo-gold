@@ -88,7 +88,7 @@ final class OnboardingViewModel: ObservableObject {
                 title: "Deposit USDC",
                 description: "Buy USDC with INR using UPI or card via OnMeta. Instant deposit to your wallet.",
                 actionTitle: "Go to Deposit",
-                isCompleted: hasDepositedUSDC,
+                isCompleted: self.hasDepositedUSDC,
                 action: { navigationHandler("wallet") }
             ),
             TimelineStep(
@@ -96,7 +96,7 @@ final class OnboardingViewModel: ObservableObject {
                 title: "Swap to PAXG",
                 description: "Convert USDC to PAXG (tokenized gold) at best rates via DEX aggregator.",
                 actionTitle: "Go to Swap",
-                isCompleted: hasSwappedToPAXG,
+                isCompleted: self.hasSwappedToPAXG,
                 action: { navigationHandler("wallet") }
             ),
             TimelineStep(
@@ -104,7 +104,7 @@ final class OnboardingViewModel: ObservableObject {
                 title: "Borrow USDC",
                 description: "Use PAXG as collateral to borrow USDC instantly via Fluid Protocol at low interest rates.",
                 actionTitle: "Go to Borrow",
-                isCompleted: hasBorrowed,
+                isCompleted: self.hasBorrowed,
                 action: { navigationHandler("borrow") }
             ),
             TimelineStep(
@@ -112,10 +112,10 @@ final class OnboardingViewModel: ObservableObject {
                 title: "Manage Active Loans",
                 description: "View and manage your active loans. Repay debt, add collateral, or withdraw excess collateral.",
                 actionTitle: "View Loans",
-                isCompleted: hasVisitedLoans,
-                action: { 
+                isCompleted: self.hasVisitedLoans,
+                action: { [weak self] in
                     navigationHandler("loans")
-                    markLoansVisited()
+                    self?.markLoansVisited()
                 }
             ),
             TimelineStep(
@@ -123,7 +123,7 @@ final class OnboardingViewModel: ObservableObject {
                 title: "Withdraw to Bank",
                 description: "Convert USDC back to INR and withdraw directly to your bank account via Transak.",
                 actionTitle: "Go to Withdraw",
-                isCompleted: hasWithdrawn,
+                isCompleted: self.hasWithdrawn,
                 action: { navigationHandler("wallet") }
             )
         ]

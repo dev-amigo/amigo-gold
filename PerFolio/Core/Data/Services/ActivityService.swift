@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import Combine
 
 /// Service for managing user activities with SwiftData
 @MainActor
