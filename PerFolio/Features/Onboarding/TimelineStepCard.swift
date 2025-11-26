@@ -1,5 +1,4 @@
 import SwiftUI
-import TipKit
 
 /// Individual timeline step - compact design with colored icons
 struct TimelineStepCard: View {
@@ -9,13 +8,9 @@ struct TimelineStepCard: View {
     let isCompleted: Bool
     let stepColor: Color
     let stepIcon: String
-    let tip: (any Tip)?
-    let manualTip: (any Tip)?
-    let onTipAction: ((String) -> Void)?
     let action: () -> Void
     
     @EnvironmentObject var themeManager: ThemeManager
-    @State private var showInfoTip = false
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -45,8 +40,8 @@ struct TimelineStepCard: View {
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
                 
-                // Action button with info icon
-                HStack(spacing: 8) {
+                // Action button
+                if !isCompleted {
                     Button {
                         HapticManager.shared.light()
                         action()
@@ -65,43 +60,12 @@ struct TimelineStepCard: View {
                                 .fill(stepColor.opacity(0.12))
                         )
                     }
-                    .if(tip != nil) { view in
-                        view.popoverTip(tip!, arrowEdge: .top) { action in
-                            onTipAction?(action.id)
-                        }
-                    }
-                    
-                    // Info icon - always available for manual tip display
-                    if manualTip != nil {
-                        Button {
-                            HapticManager.shared.light()
-                            showInfoTip = true
-                        } label: {
-                            Image(systemName: "info.circle.fill")
-                                .font(.system(size: 18, weight: .medium))
-                                .foregroundStyle(themeManager.perfolioTheme.textSecondary.opacity(0.6))
-                        }
-                        .popoverTip(manualTip!, isPresented: $showInfoTip, arrowEdge: .top)
-                    }
+                    .padding(.top, 2)
                 }
-                .padding(.top, 2)
             }
         }
         .padding(.vertical, 12)
         .opacity(isCompleted ? 0.6 : 1.0)
-    }
-}
-
-// MARK: - View Extension for Conditional Modifiers
-
-extension View {
-    @ViewBuilder
-    func `if`<Transform: View>(_ condition: Bool, transform: (Self) -> Transform) -> some View {
-        if condition {
-            transform(self)
-        } else {
-            self
-        }
     }
 }
 

@@ -1,27 +1,12 @@
 import SwiftUI
-import TipKit
 
-/// Game Center-style onboarding timeline view for all users with tutorial tips
+/// Game Center-style onboarding timeline view for all users
 struct OnboardingTimelineView: View {
     @ObservedObject var onboardingViewModel: OnboardingViewModel
     @EnvironmentObject var themeManager: ThemeManager
     
     // Callback for navigation
     var onNavigate: ((String) -> Void)?
-    
-    // Tutorial tips (sequential with rules)
-    let depositTip = DepositUSDCTip()
-    let swapTip = SwapToPAXGTip()
-    let borrowTip = BorrowUSDCTip()
-    let loansTip = ManageLoansTip()
-    let withdrawTip = WithdrawBankTip()
-    
-    // Manual info tips (always available)
-    let depositInfoTip = DepositInfoTip()
-    let swapInfoTip = SwapInfoTip()
-    let borrowInfoTip = BorrowInfoTip()
-    let loansInfoTip = LoansInfoTip()
-    let withdrawInfoTip = WithdrawInfoTip()
     
     var body: some View {
         VStack(spacing: 0) {
@@ -131,7 +116,7 @@ struct OnboardingTimelineView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
             
-            // Steps with arrow separators and manual info tips only
+            // Steps with arrow separators
             VStack(spacing: 0) {
                 ForEach(Array(onboardingViewModel.getSteps(navigationHandler: handleNavigation).enumerated()), id: \.element.id) { index, step in
                     TimelineStepCard(
@@ -141,11 +126,6 @@ struct OnboardingTimelineView: View {
                         isCompleted: step.isCompleted,
                         stepColor: step.color,
                         stepIcon: step.icon,
-                        tip: nil, // Disabled automatic tutorial tips
-                        manualTip: getManualTipForStep(index),
-                        onTipAction: { actionId in
-                            handleTipAction(actionId, stepIndex: index)
-                        },
                         action: step.action
                     )
                     .environmentObject(themeManager)
@@ -173,104 +153,11 @@ struct OnboardingTimelineView: View {
         AppLogger.log("📍 Navigating to: \(destination)", category: "onboarding")
         onNavigate?(destination)
         
-        // Collapse after navigation (only if tutorial is complete)
-        if onboardingViewModel.isExpanded && onboardingViewModel.isTutorialComplete {
+        // Collapse after navigation
+        if onboardingViewModel.isExpanded {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 onboardingViewModel.toggleExpanded()
             }
-        }
-    }
-    
-    // MARK: - Tip Helpers
-    
-    private func getTipForStep(_ index: Int) -> (any Tip)? {
-        switch index {
-        case 0: return depositTip
-        case 1: return swapTip
-        case 2: return borrowTip
-        case 3: return loansTip
-        case 4: return withdrawTip
-        default: return nil
-        }
-    }
-    
-    private func getManualTipForStep(_ index: Int) -> (any Tip)? {
-        switch index {
-        case 0: return depositInfoTip
-        case 1: return swapInfoTip
-        case 2: return borrowInfoTip
-        case 3: return loansInfoTip
-        case 4: return withdrawInfoTip
-        default: return nil
-        }
-    }
-    
-    private func handleTipAction(_ actionId: String, stepIndex: Int) {
-        HapticManager.shared.medium()
-        
-        AppLogger.log("🔔 Tip action: \(actionId) at step \(stepIndex)", category: "onboarding")
-        
-        switch stepIndex {
-        case 0: // Deposit tip
-            if actionId == "next" {
-                Task { @MainActor in
-                    depositTip.invalidate(reason: .actionPerformed)
-                    
-                    // Small delay to ensure invalidation completes
-                    try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-                    
-                    SwapToPAXGTip.hasSeenDepositTip = true
-                    AppLogger.log("✅ Deposit tip completed, swap tip should appear now", category: "onboarding")
-                }
-            }
-            
-        case 1: // Swap tip
-            if actionId == "next" {
-                Task { @MainActor in
-                    swapTip.invalidate(reason: .actionPerformed)
-                    
-                    try? await Task.sleep(nanoseconds: 100_000_000)
-                    
-                    BorrowUSDCTip.hasSeenSwapTip = true
-                    AppLogger.log("✅ Swap tip completed, borrow tip should appear now", category: "onboarding")
-                }
-            }
-            
-        case 2: // Borrow tip
-            if actionId == "next" {
-                Task { @MainActor in
-                    borrowTip.invalidate(reason: .actionPerformed)
-                    
-                    try? await Task.sleep(nanoseconds: 100_000_000)
-                    
-                    ManageLoansTip.hasSeenBorrowTip = true
-                    AppLogger.log("✅ Borrow tip completed, loans tip should appear now", category: "onboarding")
-                }
-            }
-            
-        case 3: // Loans tip
-            if actionId == "next" {
-                Task { @MainActor in
-                    loansTip.invalidate(reason: .actionPerformed)
-                    
-                    try? await Task.sleep(nanoseconds: 100_000_000)
-                    
-                    WithdrawBankTip.hasSeenLoansTip = true
-                    AppLogger.log("✅ Loans tip completed, withdraw tip should appear now", category: "onboarding")
-                }
-            }
-            
-        case 4: // Withdraw tip (last one)
-            if actionId == "finish" {
-                Task { @MainActor in
-                    withdrawTip.invalidate(reason: .actionPerformed)
-                    onboardingViewModel.completeTutorial()
-                    AppLogger.log("🎉 Tutorial finished!", category: "onboarding")
-                }
-            }
-            
-        default:
-            break
         }
     }
 }
