@@ -210,9 +210,26 @@ struct OnboardingTimelineView: View {
     
     private func handleInfoTap(stepIndex: Int) {
         HapticManager.shared.light()
-        AppLogger.log("ℹ️ Info button tapped for step \(stepIndex)", category: "onboarding")
-        // Note: Tips will show automatically via .popoverTip() modifier
-        // No manual triggering needed - TipKit handles it
+        
+        // Invalidate the tip so it can be shown again
+        Task { @MainActor in
+            switch stepIndex {
+            case 0:
+                depositInfoTip.invalidate(reason: .tipClosed)
+            case 1:
+                swapInfoTip.invalidate(reason: .tipClosed)
+            case 2:
+                borrowInfoTip.invalidate(reason: .tipClosed)
+            case 3:
+                loansInfoTip.invalidate(reason: .tipClosed)
+            case 4:
+                withdrawInfoTip.invalidate(reason: .tipClosed)
+            default:
+                break
+            }
+        }
+        
+        AppLogger.log("ℹ️ Manual info tip invalidated for step \(stepIndex), will re-show", category: "onboarding")
     }
     
     private func handleTipAction(_ actionId: String, stepIndex: Int) {
