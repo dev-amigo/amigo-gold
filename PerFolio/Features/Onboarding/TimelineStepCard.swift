@@ -10,7 +10,9 @@ struct TimelineStepCard: View {
     let stepColor: Color
     let stepIcon: String
     let tip: (any Tip)?
+    let manualTip: (any Tip)?
     let onTipAction: ((String) -> Void)?
+    let onInfoTap: (() -> Void)?
     let action: () -> Void
     
     @EnvironmentObject var themeManager: ThemeManager
@@ -43,31 +45,46 @@ struct TimelineStepCard: View {
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
                 
-                // Action button (always show for easy navigation)
-                Button {
-                    HapticManager.shared.light()
-                    action()
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(actionTitle)
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 11, weight: .semibold))
+                // Action button with info icon
+                HStack(spacing: 8) {
+                    Button {
+                        HapticManager.shared.light()
+                        action()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(actionTitle)
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundStyle(stepColor)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(stepColor.opacity(0.12))
+                        )
                     }
-                    .foregroundStyle(stepColor)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(stepColor.opacity(0.12))
-                    )
+                    .if(tip != nil) { view in
+                        view.popoverTip(tip!, arrowEdge: .top) { action in
+                            onTipAction?(action.id)
+                        }
+                    }
+                    
+                    // Info icon - always available for manual tip display
+                    if manualTip != nil {
+                        Button {
+                            HapticManager.shared.light()
+                            onInfoTap?()
+                        } label: {
+                            Image(systemName: "info.circle.fill")
+                                .font(.system(size: 18, weight: .medium))
+                                .foregroundStyle(themeManager.perfolioTheme.textSecondary.opacity(0.6))
+                        }
+                        .popoverTip(manualTip!, arrowEdge: .top)
+                    }
                 }
                 .padding(.top, 2)
-                .if(tip != nil) { view in
-                    view.popoverTip(tip!, arrowEdge: .top) { action in
-                        onTipAction?(action.id)
-                    }
-                }
             }
         }
         .padding(.vertical, 12)

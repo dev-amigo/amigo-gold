@@ -9,12 +9,19 @@ struct OnboardingTimelineView: View {
     // Callback for navigation
     var onNavigate: ((String) -> Void)?
     
-    // Tutorial tips
+    // Tutorial tips (sequential with rules)
     let depositTip = DepositUSDCTip()
     let swapTip = SwapToPAXGTip()
     let borrowTip = BorrowUSDCTip()
     let loansTip = ManageLoansTip()
     let withdrawTip = WithdrawBankTip()
+    
+    // Manual info tips (always available)
+    let depositInfoTip = DepositInfoTip()
+    let swapInfoTip = SwapInfoTip()
+    let borrowInfoTip = BorrowInfoTip()
+    let loansInfoTip = LoansInfoTip()
+    let withdrawInfoTip = WithdrawInfoTip()
     
     var body: some View {
         VStack(spacing: 0) {
@@ -135,8 +142,12 @@ struct OnboardingTimelineView: View {
                         stepColor: step.color,
                         stepIcon: step.icon,
                         tip: onboardingViewModel.isTutorialComplete ? nil : getTipForStep(index),
+                        manualTip: getManualTipForStep(index),
                         onTipAction: { actionId in
                             handleTipAction(actionId, stepIndex: index)
+                        },
+                        onInfoTap: {
+                            handleInfoTap(stepIndex: index)
                         },
                         action: step.action
                     )
@@ -184,6 +195,57 @@ struct OnboardingTimelineView: View {
         case 4: return withdrawTip
         default: return nil
         }
+    }
+    
+    private func getManualTipForStep(_ index: Int) -> (any Tip)? {
+        switch index {
+        case 0: return depositInfoTip
+        case 1: return swapInfoTip
+        case 2: return borrowInfoTip
+        case 3: return loansInfoTip
+        case 4: return withdrawInfoTip
+        default: return nil
+        }
+    }
+    
+    private func handleInfoTap(stepIndex: Int) {
+        HapticManager.shared.light()
+        
+        // Trigger manual tip display by setting parameter
+        Task { @MainActor in
+            switch stepIndex {
+            case 0:
+                DepositInfoTip.shouldShow = true
+                // Reset after a delay to allow showing again
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                DepositInfoTip.shouldShow = false
+                
+            case 1:
+                SwapInfoTip.shouldShow = true
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                SwapInfoTip.shouldShow = false
+                
+            case 2:
+                BorrowInfoTip.shouldShow = true
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                BorrowInfoTip.shouldShow = false
+                
+            case 3:
+                LoansInfoTip.shouldShow = true
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                LoansInfoTip.shouldShow = false
+                
+            case 4:
+                WithdrawInfoTip.shouldShow = true
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                WithdrawInfoTip.shouldShow = false
+                
+            default:
+                break
+            }
+        }
+        
+        AppLogger.log("ℹ️ Manual info tip triggered for step \(stepIndex)", category: "onboarding")
     }
     
     private func handleTipAction(_ actionId: String, stepIndex: Int) {

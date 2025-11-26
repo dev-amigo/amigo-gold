@@ -1,6 +1,128 @@
 import SwiftUI
 import TipKit
 
+// MARK: - Manual Info Tips (Always Available)
+
+/// Manual tip for Deposit USDC - can be shown anytime
+struct DepositInfoTip: Tip {
+    @Parameter
+    static var shouldShow: Bool = false
+    
+    var title: Text {
+        Text("What is USDC?")
+    }
+    
+    var message: Text? {
+        Text("USDC (USD Coin) is a digital dollar - a stablecoin that's always worth $1. It's like digital cash you can use instantly across borders without bank delays or fees.")
+    }
+    
+    var image: Image? {
+        Image(systemName: "dollarsign.circle.fill")
+    }
+    
+    var rules: [Rule] {
+        [
+            #Rule(Self.$shouldShow) { $0 == true }
+        ]
+    }
+}
+
+/// Manual tip for Swap to PAXG - can be shown anytime
+struct SwapInfoTip: Tip {
+    @Parameter
+    static var shouldShow: Bool = false
+    
+    var title: Text {
+        Text("What is PAXG?")
+    }
+    
+    var message: Text? {
+        Text("PAXG (Pax Gold) is tokenized physical gold. Each PAXG token represents 1 troy ounce of London Good Delivery gold stored in secure vaults. Own real gold, digitally!")
+    }
+    
+    var image: Image? {
+        Image(systemName: "sparkles")
+    }
+    
+    var rules: [Rule] {
+        [
+            #Rule(Self.$shouldShow) { $0 == true }
+        ]
+    }
+}
+
+/// Manual tip for Borrow USDC - can be shown anytime
+struct BorrowInfoTip: Tip {
+    @Parameter
+    static var shouldShow: Bool = false
+    
+    var title: Text {
+        Text("How Borrowing Works")
+    }
+    
+    var message: Text? {
+        Text("Lock your PAXG as collateral to borrow USDC instantly. Your gold stays yours - you can unlock it anytime by repaying the loan. It's like a gold-backed credit line!")
+    }
+    
+    var image: Image? {
+        Image(systemName: "banknote.fill")
+    }
+    
+    var rules: [Rule] {
+        [
+            #Rule(Self.$shouldShow) { $0 == true }
+        ]
+    }
+}
+
+/// Manual tip for Manage Loans - can be shown anytime
+struct LoansInfoTip: Tip {
+    @Parameter
+    static var shouldShow: Bool = false
+    
+    var title: Text {
+        Text("Monitor Your Loans")
+    }
+    
+    var message: Text? {
+        Text("Track your loan health, collateral ratio, and interest in real-time. Add more collateral to stay safe, or repay anytime. You're always in control of your position.")
+    }
+    
+    var image: Image? {
+        Image(systemName: "chart.line.uptrend.xyaxis")
+    }
+    
+    var rules: [Rule] {
+        [
+            #Rule(Self.$shouldShow) { $0 == true }
+        ]
+    }
+}
+
+/// Manual tip for Withdraw - can be shown anytime
+struct WithdrawInfoTip: Tip {
+    @Parameter
+    static var shouldShow: Bool = false
+    
+    var title: Text {
+        Text("Cash Out to Your Bank")
+    }
+    
+    var message: Text? {
+        Text("Convert USDC back to INR and withdraw directly to your bank account in minutes. Seamless on/off ramp between crypto and traditional banking. Your funds, your way!")
+    }
+    
+    var image: Image? {
+        Image(systemName: "building.columns.fill")
+    }
+    
+    var rules: [Rule] {
+        [
+            #Rule(Self.$shouldShow) { $0 == true }
+        ]
+    }
+}
+
 // MARK: - Onboarding Tutorial Tips
 
 /// Tip for Deposit USDC button
