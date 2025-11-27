@@ -15,6 +15,9 @@ struct SettingsView: View {
                 // Theme Section
                 themeSection
                 
+                // Preferences Section (NEW)
+                preferencesSection
+                
                 // App Settings Section
                 appSettingsSection
                 
@@ -157,6 +160,74 @@ struct SettingsView: View {
             Text("Changes apply instantly.")
                 .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                 .font(.system(size: 13))
+        }
+    }
+    
+    // MARK: - Preferences Section
+    
+    private var preferencesSection: some View {
+        Section {
+            // Notifications Toggle
+            HStack(spacing: 12) {
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    .symbolRenderingMode(.hierarchical)
+                    .frame(width: 28, alignment: .center)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Notifications")
+                        .font(.system(size: 17, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    Text("Price alerts & updates")
+                        .font(.system(size: 13))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: $viewModel.notificationsEnabled)
+                    .labelsHidden()
+                    .tint(themeManager.perfolioTheme.tintColor)
+                    .onChange(of: viewModel.notificationsEnabled) { _, newValue in
+                        HapticManager.shared.light()
+                        viewModel.updateNotificationPreference(newValue)
+                    }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+            
+            // Currency Selection
+            NavigationLink {
+                CurrencySettingsView()
+                    .environmentObject(themeManager)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "dollarsign.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 28, alignment: .center)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Default Currency")
+                            .font(.system(size: 17, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("Display amounts in \(viewModel.currentCurrency)")
+                            .font(.system(size: 13))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Text(viewModel.currencySymbol)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+        } header: {
+            Text("Preferences")
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
         }
     }
     

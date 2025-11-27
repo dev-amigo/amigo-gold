@@ -14,7 +14,11 @@ struct LandingView: View {
     ) {
         self.configuration = configuration
         self.onAuthenticated = onAuthenticated
-        _viewModel = StateObject(wrappedValue: LandingViewModel(authCoordinator: authCoordinator, onAuthenticated: onAuthenticated))
+        _viewModel = StateObject(wrappedValue: LandingViewModel(
+            authCoordinator: authCoordinator,
+            onAuthenticated: onAuthenticated,
+            onOnboardingRequired: {}
+        ))
     }
 
     var body: some View {
@@ -34,6 +38,14 @@ struct LandingView: View {
                 message: Text(alert.message),
                 dismissButton: .default(Text("OK"))
             )
+        }
+        .fullScreenCover(isPresented: $viewModel.showInitialOnboarding) {
+            InitialOnboardingView {
+                // On onboarding complete, dismiss and proceed to dashboard
+                viewModel.showInitialOnboarding = false
+                onAuthenticated()
+            }
+            .environmentObject(themeManager)
         }
     }
     
