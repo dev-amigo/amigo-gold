@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 
 /// Game Center-style onboarding timeline view for all users
 struct OnboardingTimelineView: View {
@@ -8,12 +9,29 @@ struct OnboardingTimelineView: View {
     // Callback for navigation
     var onNavigate: ((String) -> Void)?
     
+    // TipKit tip for first-time users
+    private let onboardingTip = OnboardingTip()
+    
     var body: some View {
+        VStack(spacing: 12) {
+            // TipKit tip (only for first-time users)
+            TipView(onboardingTip, arrowEdge: .top)
+                .tipBackground(themeManager.perfolioTheme.secondaryBackground)
+                .tipCornerRadius(16)
+            
+            // Get Started section
+            getStartedSection
+        }
+    }
+    
+    private var getStartedSection: some View {
         VStack(spacing: 0) {
             // Header - Always visible
             headerView
                 .onTapGesture {
                     onboardingViewModel.toggleExpanded()
+                    // Invalidate tip when user taps to expand
+                    onboardingTip.invalidate(reason: .actionPerformed)
                 }
             
             // Expandable content

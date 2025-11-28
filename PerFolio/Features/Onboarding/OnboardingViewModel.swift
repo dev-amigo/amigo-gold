@@ -24,10 +24,11 @@ final class OnboardingViewModel: ObservableObject {
         // Check if tutorial was completed before
         isTutorialComplete = UserDefaults.standard.bool(forKey: tutorialCompleteKey)
         
-        // Keep expanded until tutorial is complete
-        if !isTutorialComplete {
-            isExpanded = true
-        }
+        // Keep collapsed by default - TipKit will guide users to expand it
+        isExpanded = false
+        
+        // Update TipKit parameter
+        OnboardingTip.hasCompletedOnboarding = isTutorialComplete
     }
     
     // MARK: - Setup
@@ -116,6 +117,9 @@ final class OnboardingViewModel: ObservableObject {
     func completeTutorial() {
         isTutorialComplete = true
         UserDefaults.standard.set(true, forKey: tutorialCompleteKey)
+        
+        // Update TipKit parameter to hide the tip
+        OnboardingTip.hasCompletedOnboarding = true
         
         // Collapse timeline after tutorial completion
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
