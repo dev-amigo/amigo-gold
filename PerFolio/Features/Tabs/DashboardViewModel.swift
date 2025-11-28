@@ -18,11 +18,14 @@ final class DashboardViewModel: ObservableObject {
     @Published var borrowPositions: [BorrowPosition] = []
     @Published var priceHistory: [PricePoint] = []
     @Published var currentPAXGPrice: Decimal = 2400
+    @Published var selectedDashboardType: DashboardType = UserPreferences.preferredDashboard
+    @Published private var currencyRefreshTrigger: Int = 0 // Trigger UI refresh on currency change
     
     private let web3Client: Web3Client
     private let erc20Contract: ERC20Contract
     private let fluidPositionsService: FluidPositionsService
     private let priceOracleService: PriceOracleService
+    private var cancellables = Set<AnyCancellable>()
     
     init(
         web3Client: Web3Client = Web3Client(),
@@ -34,6 +37,29 @@ final class DashboardViewModel: ObservableObject {
         self.erc20Contract = erc20Contract ?? ERC20Contract(web3Client: web3Client)
         self.fluidPositionsService = fluidPositionsService ?? FluidPositionsService(web3Client: web3Client)
         self.priceOracleService = priceOracleService ?? PriceOracleService()
+        
+        setupCurrencyObserver()
+    }
+    
+    private func setupCurrencyObserver() {
+        NotificationCenter.default.publisher(for: .currencyDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self = self else { return }
+                
+                if let newCurrency = notification.userInfo?["newCurrency"] as? String {
+                    AppLogger.log("💱 DashboardViewModel detected currency change to: \(newCurrency)", category: "dashboard")
+                    
+                    // Trigger UI refresh by updating published property
+                    self.currencyRefreshTrigger += 1
+                    
+                    // Force objectWillChange to notify all views
+                    self.objectWillChange.send()
+                    
+                    AppLogger.log("✅ Dashboard UI refresh triggered", category: "dashboard")
+                }
+            }
+            .store(in: &cancellables)
     }
     
     var isWalletConnected: Bool {
@@ -156,6 +182,76 @@ final class DashboardViewModel: ObservableObject {
         return formatter.string(from: balance.decimalBalance as NSDecimalNumber) ?? "$0.00"
     }
     
+    // MARK: - User Currency Values (Dynamic based on Settings)
+    
+    var paxgValueInUserCurrency: String {
+        guard let balance = paxgBalance else {
+            return formatUserCurrency(0)
+        }
+        
+        // Calculate PAXG value in USD first
+        let paxgValueUSD = balance.decimalBalance * currentPAXGPrice
+        
+        // Convert to user's currency
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        // If user currency is USD, return directly
+        if userCurrency == "USD" {
+            return formatUserCurrency(paxgValueUSD)
+        }
+        
+        // Otherwise, convert using live rates
+        return convertAndFormat(usdAmount: paxgValueUSD)
+    }
+    
+    var usdcValueInUserCurrency: String {
+        guard let balance = usdcBalance else {
+            return formatUserCurrency(0)
+        }
+        
+        // USDC is 1:1 with USD
+        let usdcValueUSD = balance.decimalBalance
+        
+        // Convert to user's currency
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        // If user currency is USD, return directly
+        if userCurrency == "USD" {
+            return formatUserCurrency(usdcValueUSD)
+        }
+        
+        // Otherwise, convert using live rates
+        return convertAndFormat(usdAmount: usdcValueUSD)
+    }
+    
+    // Helper to convert USD to user currency and format
+    private func convertAndFormat(usdAmount: Decimal) -> String {
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        // Try to get live currency with conversion rate
+        guard let currency = CurrencyService.shared.getCurrency(code: userCurrency) else {
+            // Fallback to USD
+            return formatUserCurrency(usdAmount)
+        }
+        
+        // Convert USD to user currency using live rate
+        let convertedAmount = usdAmount * currency.conversionRate
+        
+        return formatUserCurrency(convertedAmount)
+    }
+    
+    // Helper to format amount in user's currency
+    private func formatUserCurrency(_ amount: Decimal) -> String {
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        guard let currency = CurrencyService.shared.getCurrency(code: userCurrency) else {
+            // Fallback formatting
+            return "\(amount)"
+        }
+        
+        return currency.format(amount)
+    }
+    
     var totalPortfolioValue: String {
         guard let paxg = paxgBalance, let usdc = usdcBalance else {
             return "$0.00"
@@ -171,6 +267,48 @@ final class DashboardViewModel: ObservableObject {
         return formatter.string(from: totalValue as NSDecimalNumber) ?? "$0.00"
     }
     
+    // MARK: - Portfolio Values in User Currency
+    
+    /// Gold (PAXG) portfolio value in user's selected currency
+    var goldPortfolioValue: String {
+        guard let balance = paxgBalance else {
+            return formatUserCurrency(0)
+        }
+        
+        // Calculate PAXG value in USD
+        let paxgValueUSD = balance.decimalBalance * currentPAXGPrice
+        
+        // Convert to user's currency
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        if userCurrency == "USD" {
+            return formatUserCurrency(paxgValueUSD)
+        }
+        
+        return convertAndFormat(usdAmount: paxgValueUSD)
+    }
+    
+    /// Total portfolio value (PAXG + USDC) in user's selected currency
+    var totalPortfolioValueInUserCurrency: String {
+        guard let paxg = paxgBalance, let usdc = usdcBalance else {
+            return formatUserCurrency(0)
+        }
+        
+        // Calculate total in USD first
+        let paxgValueUSD = paxg.decimalBalance * currentPAXGPrice
+        let usdcValueUSD = usdc.decimalBalance
+        let totalUSD = paxgValueUSD + usdcValueUSD
+        
+        // Convert to user's currency
+        let userCurrency = UserPreferences.defaultCurrency
+        
+        if userCurrency == "USD" {
+            return formatUserCurrency(totalUSD)
+        }
+        
+        return convertAndFormat(usdAmount: totalUSD)
+    }
+    
     // MARK: - Statistics Computed Properties
     
     var totalCollateral: String {
@@ -180,9 +318,9 @@ final class DashboardViewModel: ObservableObject {
     }
     
     var totalCollateralUSD: String {
-        guard !borrowPositions.isEmpty else { return "$0.00" }
+        guard !borrowPositions.isEmpty else { return formatUserCurrency(0) }
         let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.collateralValueUSD }
-        return formatCurrency(total)
+        return convertAndFormat(usdAmount: total)
     }
     
     var totalBorrowed: String {
@@ -192,9 +330,9 @@ final class DashboardViewModel: ObservableObject {
     }
     
     var totalBorrowedUSD: String {
-        guard !borrowPositions.isEmpty else { return "$0.00" }
+        guard !borrowPositions.isEmpty else { return formatUserCurrency(0) }
         let total = borrowPositions.reduce(into: Decimal(0)) { $0 += $1.debtValueUSD }
-        return formatCurrency(total)
+        return convertAndFormat(usdAmount: total)
     }
     
     var healthFactor: String {
@@ -237,7 +375,7 @@ final class DashboardViewModel: ObservableObject {
     }
     
     var paxgCurrentPrice: String {
-        return formatCurrency(currentPAXGPrice)
+        return convertAndFormat(usdAmount: currentPAXGPrice)
     }
     
     var activePositions: String {
@@ -247,7 +385,7 @@ final class DashboardViewModel: ObservableObject {
     // MARK: - Price Chart Properties
     
     var paxgCurrentPriceFormatted: String {
-        return formatCurrency(currentPAXGPrice)
+        return convertAndFormat(usdAmount: currentPAXGPrice)
     }
     
     var paxgPriceChange: String {
@@ -306,17 +444,14 @@ final class DashboardViewModel: ObservableObject {
     }
     
     func fetchPriceHistory() async {
-        do {
-            let price = try await priceOracleService.fetchPAXGPrice()
-            await MainActor.run {
-                self.currentPAXGPrice = price
-                // Generate mock 90-day price history
-                self.priceHistory = generateMockPriceHistory(currentPrice: price)
-            }
-            AppLogger.log("Fetched PAXG price: $\(price)", category: "dashboard")
-        } catch {
-            AppLogger.log("Failed to fetch PAXG price: \(error)", category: "dashboard")
+        // Fetch PAXG price (always returns a value, never throws)
+        let price = await priceOracleService.fetchPAXGPrice()
+        await MainActor.run {
+            self.currentPAXGPrice = price
+            // Generate mock 90-day price history
+            self.priceHistory = generateMockPriceHistory(currentPrice: price)
         }
+        AppLogger.log("✅ PAXG price loaded: $\(price)", category: "dashboard")
     }
     
     private func generateMockPriceHistory(currentPrice: Decimal) -> [PricePoint] {

@@ -1,0 +1,147 @@
+import SwiftUI
+
+/// Collateral Growth Card - Shows current gold and borrowing power
+struct CollateralGrowthCard: View {
+    @EnvironmentObject private var themeManager: ThemeManager
+    
+    let currentCollateral: String
+    let paxgBalance: Decimal
+    let availableToBorrow: String
+    let onAddGold: () -> Void
+    
+    var body: some View {
+        PerFolioCard {
+            VStack(alignment: .leading, spacing: 16) {
+                // Header
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 12))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    
+                    Text("Your Collateral")
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    
+                    Spacer()
+                }
+                
+                // Info banner
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        
+                        Text("More gold = More borrowing power")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    }
+                    
+                    HStack(spacing: 8) {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                            .font(.system(size: 14))
+                            .foregroundStyle(themeManager.perfolioTheme.success)
+                        
+                        Text("Gold price increases → Your collateral value increases too!")
+                            .font(.system(size: 13))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                }
+                .padding(12)
+                .background(themeManager.perfolioTheme.tintColor.opacity(0.1))
+                .cornerRadius(10)
+                
+                Divider()
+                    .background(themeManager.perfolioTheme.border)
+                
+                // Current Collateral
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Current Gold Collateral")
+                        .font(.caption)
+                        .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                    
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(currentCollateral)
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        
+                        Text("(\(formatDecimal(paxgBalance)) PAXG)")
+                            .font(.system(size: 16))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                }
+                
+                // Borrowing Power
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("You Can Borrow")
+                        .font(.caption)
+                        .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                    
+                    Text(availableToBorrow)
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.success)
+                }
+                
+                Divider()
+                    .background(themeManager.perfolioTheme.border)
+                
+                // Action Button
+                Button {
+                    HapticManager.shared.medium()
+                    onAddGold()
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.white)
+                        
+                        Text("Add More Gold")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.white)
+                        
+                        Spacer()
+                        
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.8, green: 0.6, blue: 0.2),  // Rich gold
+                                Color(red: 0.72, green: 0.52, blue: 0.15) // Deeper gold
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(14)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 16)
+        }
+    }
+    
+    private func formatDecimal(_ value: Decimal) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 4
+        return formatter.string(from: value as NSDecimalNumber) ?? "0"
+    }
+}
+
+#Preview {
+    CollateralGrowthCard(
+        currentCollateral: "₹3,485",
+        paxgBalance: 0.001,
+        availableToBorrow: "₹261.60",
+        onAddGold: {}
+    )
+    .environmentObject(ThemeManager())
+    .padding()
+}
+

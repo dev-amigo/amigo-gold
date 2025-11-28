@@ -1,0 +1,187 @@
+import SwiftUI
+import TipKit
+
+/// Game Center-style onboarding timeline view for all users
+struct OnboardingTimelineView: View {
+    @ObservedObject var onboardingViewModel: OnboardingViewModel
+    @EnvironmentObject var themeManager: ThemeManager
+    
+    // Callback for navigation
+    var onNavigate: ((String) -> Void)?
+    
+    // TipKit tip for first-time users
+    private let onboardingTip = OnboardingTip()
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            // Get Started section
+            getStartedSection
+            
+            // TipKit tip below Get Started (only for first-time users)
+            TipView(onboardingTip, arrowEdge: .top)
+                .tipBackground(
+                    Color(white: 0.2, opacity: 1.0) // Lighter than background for visibility
+                )
+                .tipCornerRadius(12)
+                .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
+        }
+    }
+    
+    private var getStartedSection: some View {
+        VStack(spacing: 0) {
+            // Header - Always visible
+            headerView
+                .onTapGesture {
+                    onboardingViewModel.toggleExpanded()
+                    // Invalidate tip when user taps to expand
+                    onboardingTip.invalidate(reason: .actionPerformed)
+                }
+            
+            // Expandable content
+            if onboardingViewModel.isExpanded {
+                timelineContent
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.95, anchor: .top).combined(with: .opacity),
+                        removal: .scale(scale: 0.95, anchor: .top).combined(with: .opacity)
+                    ))
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            themeManager.perfolioTheme.secondaryBackground,
+                            themeManager.perfolioTheme.secondaryBackground.opacity(0.95),
+                            Color(hex: "D4AF37").opacity(0.15) // Golden tint
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color(hex: "D4AF37").opacity(0.3), lineWidth: 1.5)
+        )
+        .shadow(color: .black.opacity(0.3), radius: 12, y: 6)
+    }
+    
+    // MARK: - Header View
+    
+    private var headerView: some View {
+        HStack(spacing: 12) {
+            // Icon with golden tint
+            ZStack {
+                Circle()
+                    .fill(Color(hex: "D4AF37").opacity(0.2))
+                    .frame(width: 44, height: 44)
+                
+                Image(systemName: "star.circle.fill")
+                    .font(.system(size: 24))
+                    .foregroundStyle(Color(hex: "D4AF37"))
+            }
+            
+            // Title and progress
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Get Started")
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                
+                Text("\(onboardingViewModel.completedStepsCount) of \(onboardingViewModel.totalSteps) steps completed")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+            }
+            
+            Spacer()
+            
+            // Progress circle and chevron
+            HStack(spacing: 12) {
+                // Progress circle
+                ZStack {
+                    Circle()
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 3)
+                        .frame(width: 32, height: 32)
+                    
+                    Circle()
+                        .trim(from: 0, to: onboardingViewModel.progressPercentage)
+                        .stroke(Color(hex: "D4AF37"), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .frame(width: 32, height: 32)
+                        .rotationEffect(.degrees(-90))
+                    
+                    if onboardingViewModel.allStepsCompleted {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(themeManager.perfolioTheme.success)
+                    }
+                }
+                
+                // Expand/collapse chevron
+                Image(systemName: onboardingViewModel.isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    .rotationEffect(.degrees(onboardingViewModel.isExpanded ? 0 : 180))
+            }
+        }
+        .padding(16)
+    }
+    
+    // MARK: - Timeline Content
+    
+    private var timelineContent: some View {
+        VStack(spacing: 0) {
+            // Divider
+            Rectangle()
+                .fill(Color(hex: "D4AF37").opacity(0.2))
+                .frame(height: 1)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+            
+            // Steps with arrow separators
+            VStack(spacing: 0) {
+                ForEach(Array(onboardingViewModel.getSteps(navigationHandler: handleNavigation).enumerated()), id: \.element.id) { index, step in
+                    TimelineStepCard(
+                        title: step.title,
+                        description: step.description,
+                        actionTitle: step.actionTitle,
+                        isCompleted: step.isCompleted,
+                        stepColor: step.color,
+                        stepIcon: step.icon,
+                        action: step.action
+                    )
+                    .environmentObject(themeManager)
+                    
+                    // Arrow separator (except after last step)
+                    if index < onboardingViewModel.totalSteps - 1 {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "arrow.down")
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundStyle(Color.gray.opacity(0.3))
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .padding(16)
+        }
+    }
+    
+    // MARK: - Navigation Handler
+    
+    private func handleNavigation(_ destination: String) {
+        AppLogger.log("📍 Navigating to: \(destination)", category: "onboarding")
+        onNavigate?(destination)
+        
+        // Collapse after navigation
+        if onboardingViewModel.isExpanded {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                onboardingViewModel.toggleExpanded()
+            }
+        }
+    }
+}
+
+// Note: Color(hex:) extension already exists in PerFolioTheme.swift
+

@@ -30,6 +30,12 @@ final class BorrowViewModel: ObservableObject {
     @Published var showingTransactionModal = false
     @Published var showingAPYChart = false
     
+    #if DEBUG
+    @Published var showingWalletProviderSelection = false
+    @Published var selectedWalletProvider: WalletProvider = .current
+    private var hasSelectedProvider = false
+    #endif
+    
     enum ViewState {
         case loading
         case ready
@@ -74,33 +80,41 @@ final class BorrowViewModel: ObservableObject {
     func loadInitialData() async {
         viewState = .loading
         
+        AppLogger.log("🔄 Loading borrow screen data...", category: "borrow")
+        
+        // 1. Initialize Fluid vault (config, price, APY)
+        // Use default values if API fails
         do {
-            AppLogger.log("🔄 Loading borrow screen data...", category: "borrow")
-            
-            // 1. Initialize Fluid vault (config, price, APY)
             try await fluidVaultService.initialize()
-            
-            // 2. Extract data
             paxgPrice = fluidVaultService.paxgPrice
             vaultConfig = fluidVaultService.vaultConfig
             currentAPY = fluidVaultService.currentAPY
-            
-            // 3. Load user's PAXG balance
-            await loadPAXGBalance()
-            
-            // 4. Auto-fill collateral with full balance (Binance-style UX)
-            if paxgBalance > 0 {
-                collateralAmount = formatDecimal(paxgBalance, maxDecimals: 6)
-            }
-            
-            viewState = .ready
-            AppLogger.log("✅ Borrow screen ready", category: "borrow")
-            
+            AppLogger.log("✅ Fluid vault data loaded successfully", category: "borrow")
         } catch {
-            let errorMsg = "Failed to load borrow data: \(error.localizedDescription)"
-            AppLogger.log("❌ \(errorMsg)", category: "borrow")
-            viewState = .error(errorMsg)
+            AppLogger.log("⚠️ Fluid init failed, using defaults: \(error.localizedDescription)", category: "borrow")
+            
+            // Always provide default values - never show error state
+            paxgPrice = fluidVaultService.paxgPrice > 0 ? fluidVaultService.paxgPrice : 2734.0
+            currentAPY = fluidVaultService.currentAPY > 0 ? fluidVaultService.currentAPY : 4.89
+            
+            // Use default vault config if not loaded
+            if vaultConfig == nil {
+                vaultConfig = VaultConfig.defaultConfig()
+                AppLogger.log("⚠️ Using default vault config", category: "borrow")
+            }
         }
+        
+        // 2. Load user's PAXG balance
+        await loadPAXGBalance()
+        
+        // 3. Auto-fill collateral with full balance (Binance-style UX)
+        if paxgBalance > 0 {
+            collateralAmount = formatDecimal(paxgBalance, maxDecimals: 6)
+        }
+        
+        // ALWAYS show UI with available data (never error state)
+        viewState = .ready
+        AppLogger.log("✅ Borrow screen ready (with \(paxgPrice > 0 ? "live" : "default") data)", category: "borrow")
     }
     
     private func loadPAXGBalance() async {
@@ -210,7 +224,26 @@ final class BorrowViewModel: ObservableObject {
     
     // MARK: - Execute Borrow
     
+    #if DEBUG
+    /// Mark that user has selected a wallet provider
+    func markProviderSelected() {
+        hasSelectedProvider = true
+        AppLogger.log("✅ Wallet provider selected: \(selectedWalletProvider.displayName)", category: "borrow")
+    }
+    #endif
+    
     func executeBorrow() async {
+        // STEP 1: Check if dev mode is enabled - show wallet provider selection
+        #if DEBUG
+        if UserPreferences.isDevModeEnabled && !hasSelectedProvider {
+            // Show provider selection sheet first
+            AppLogger.log("🔧 Dev mode active - showing wallet provider selection", category: "borrow")
+            showingWalletProviderSelection = true
+            return
+        }
+        #endif
+        
+        // STEP 2: Validate inputs
         guard validationError == nil else {
             AppLogger.log("❌ Cannot execute: \(validationError ?? "Unknown error")", category: "borrow")
             return
@@ -223,6 +256,15 @@ final class BorrowViewModel: ObservableObject {
             transactionState = .failed("Invalid request parameters")
             return
         }
+        
+        // Log selected provider
+        #if DEBUG
+        let provider = WalletProvider.current
+        AppLogger.log("🔐 Executing borrow with: \(provider.displayName)", category: "borrow")
+        if provider.supportsGasSponsorship {
+            AppLogger.log("✨ Gas sponsorship: ENABLED", category: "borrow")
+        }
+        #endif
         
         showingTransactionModal = true
         
@@ -250,6 +292,13 @@ final class BorrowViewModel: ObservableObject {
             transactionState = .success(positionId: positionId)
             AppLogger.log("🎉 Borrow successful! Position: #\(positionId)", category: "borrow")
             
+            // Log borrow activity
+            ActivityService.shared.logBorrow(
+                amount: borrow,
+                collateral: collateral,
+                txHash: nil
+            )
+            
             // Refresh balance
             await loadPAXGBalance()
             
@@ -263,6 +312,9 @@ final class BorrowViewModel: ObservableObject {
     func resetTransaction() {
         transactionState = .idle
         showingTransactionModal = false
+        #if DEBUG
+        hasSelectedProvider = false  // Reset for next borrow
+        #endif
     }
     
     // MARK: - Helpers

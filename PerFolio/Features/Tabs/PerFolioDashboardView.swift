@@ -1,24 +1,48 @@
 import SwiftUI
+import SwiftData
 
 struct PerFolioDashboardView: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @StateObject private var viewModel = DashboardViewModel()
+    @StateObject private var onboardingViewModel = OnboardingViewModel()
+    @StateObject private var notificationManager = NotificationManager.shared
+    @Environment(\.modelContext) private var modelContext
     @State private var showCopiedToast = false
     @State private var showSettings = false
+    @State private var showNotifications = false
+    @State private var selectedTab: String = "dashboard"
     var onLogout: (() -> Void)?
+    var onNavigateToTab: ((String) -> Void)?
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    goldenHeroCard
-                    walletConnectionCard
-                    yourGoldHoldingsCard
-                    statisticsSection
-                    paxgPriceChartSection
+            VStack(spacing: 0) {
+                // Onboarding section at the top (fixed)
+                onboardingSection
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                
+                // Page indicator
+                dashboardPageIndicator
+                    .padding(.vertical, 12)
+                
+                // Swipeable dashboard pages
+                TabView(selection: $viewModel.selectedDashboardType) {
+                    regularDashboardContentScrollable
+                        .tag(DashboardType.regular)
+                    
+                    standardDashboardContentScrollable
+                        .tag(DashboardType.standard)
+                    
+                    momDashboardContentScrollable
+                        .tag(DashboardType.simplified)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 24)
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .onChange(of: viewModel.selectedDashboardType) { _, newValue in
+                    HapticManager.shared.light()
+                    UserPreferences.preferredDashboard = newValue
+                    AppLogger.log("📱 Dashboard type changed to: \(newValue.displayName)", category: "dashboard")
+                }
             }
             .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -39,9 +63,38 @@ struct PerFolioDashboardView: View {
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                 }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        HapticManager.shared.light()
+                        showNotifications = true
+                    } label: {
+                        ZStack(alignment: .topTrailing) {
+                            Image(systemName: "bell.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                            
+                            if notificationManager.unreadCount > 0 {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.red)
+                                        .frame(width: 16, height: 16)
+                                    
+                                    Text("\(min(notificationManager.unreadCount, 9))")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                                .offset(x: 8, y: -8)
+                            }
+                        }
+                    }
+                }
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView(onLogout: onLogout)
+            }
+            .sheet(isPresented: $showNotifications) {
+                NotificationCenterView(onNavigateToTab: onNavigateToTab)
             }
         }
         .overlay(alignment: .top) {
@@ -57,6 +110,26 @@ struct PerFolioDashboardView: View {
                 viewModel.setWalletAddress(savedAddress)
             } else {
                 AppLogger.log("⚠️ No wallet address found in storage. User may need to re-login.", category: "dashboard")
+            }
+            
+            // Set up onboarding timeline
+            onboardingViewModel.setup(modelContext: modelContext, dashboardViewModel: viewModel)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .currencyDidChange)) { notification in
+            // Force UI refresh when currency changes
+            // The computed properties will automatically use the new currency
+            if let newCurrency = notification.userInfo?["newCurrency"] as? String {
+                AppLogger.log("💱 Dashboard detected currency change to: \(newCurrency)", category: "dashboard")
+                
+                // Trigger a refresh of CurrencyService rates
+                Task {
+                    do {
+                        try await CurrencyService.shared.fetchLiveExchangeRates()
+                        AppLogger.log("✅ Dashboard refreshed currency rates", category: "dashboard")
+                    } catch {
+                        AppLogger.log("⚠️ Dashboard rate refresh failed: \(error.localizedDescription)", category: "dashboard")
+                    }
+                }
             }
         }
     }
@@ -74,14 +147,42 @@ struct PerFolioDashboardView: View {
         onLogout?()
     }
     
-    // MARK: - Golden Hero Card
+    // MARK: - Onboarding Section
+    
+    private var onboardingSection: some View {
+        OnboardingTimelineView(
+            onboardingViewModel: onboardingViewModel,
+            onNavigate: { tab in
+                handleOnboardingNavigation(tab)
+            }
+        )
+        .environmentObject(themeManager)
+    }
+    
+    private var regularDashboardContent: some View {
+        VStack(spacing: 24) {
+            goldenHeroCard
+            walletConnectionCard
+            yourGoldHoldingsCard
+            statisticsSection
+            paxgPriceChartSection
+        }
+    }
+    
+    private func handleOnboardingNavigation(_ destination: String) {
+        AppLogger.log("📍 Dashboard navigating to: \(destination)", category: "dashboard")
+        onNavigateToTab?(destination)
+    }
+    
+    // MARK: - Golden Hero Card (Portfolio Overview)
     
     private var goldenHeroCard: some View {
         PerFolioCard(style: .gradient) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Your Gold Portfolio")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+            VStack(alignment: .leading, spacing: 16) {
+                // Title
+                Text("Your Portfolio")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.9))
                 
                 if case .loading = viewModel.loadingState {
                     HStack {
@@ -92,13 +193,53 @@ struct PerFolioDashboardView: View {
                             .foregroundStyle(.white.opacity(0.8))
                     }
                 } else {
-                    Text(viewModel.totalPortfolioValue)
-                        .font(.system(size: 42, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Main Section: Gold (PAXG) Value
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.yellow)
+                                Text("Gold (PAXG)")
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.7))
+                            }
+                            
+                            Text(viewModel.goldPortfolioValue)
+                                .font(.system(size: 36, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                        }
+                        
+                        // Divider
+                        Rectangle()
+                            .fill(.white.opacity(0.2))
+                            .frame(height: 1)
+                            .padding(.vertical, 4)
+                        
+                        // Secondary Section: Total Portfolio (PAXG + USDC)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "chart.pie.fill")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.7))
+                                Text("Total Portfolio")
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.7))
+                                Text("(PAXG + USDC)")
+                                    .font(.system(size: 11, weight: .regular, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.5))
+                            }
+                            
+                            Text(viewModel.totalPortfolioValueInUserCurrency)
+                                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.85))
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .id(UserPreferences.defaultCurrency)  // Force refresh when currency changes
     }
     
     // MARK: - Wallet Connection Card
@@ -231,17 +372,17 @@ struct PerFolioDashboardView: View {
                 Divider()
                     .background(themeManager.perfolioTheme.border)
                 
-                // Balance rows
+                // Balance rows (now shows in user's default currency)
                 PerFolioBalanceRow(
                     tokenSymbol: "PAXG",
                     tokenAmount: viewModel.paxgFormattedBalance,
-                    usdValue: viewModel.paxgUSDValue
+                    usdValue: viewModel.paxgValueInUserCurrency
                 )
                 
                 PerFolioBalanceRow(
                     tokenSymbol: "USDC",
                     tokenAmount: viewModel.usdcFormattedBalance,
-                    usdValue: viewModel.usdcUSDValue
+                    usdValue: viewModel.usdcValueInUserCurrency
                 )
                 
                 if case .failed(let error) = viewModel.loadingState {
@@ -408,6 +549,68 @@ struct PerFolioDashboardView: View {
                 }
             }
         }
+    }
+    
+    // MARK: - Dashboard Page Indicator
+    
+    private var dashboardPageIndicator: some View {
+        HStack(spacing: 8) {
+            ForEach(DashboardType.allCases, id: \.self) { type in
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        viewModel.selectedDashboardType = type
+                    }
+                    HapticManager.shared.light()
+                } label: {
+                    VStack(spacing: 4) {
+                        Circle()
+                            .fill(viewModel.selectedDashboardType == type ? themeManager.perfolioTheme.tintColor : themeManager.perfolioTheme.textTertiary.opacity(0.3))
+                            .frame(width: 8, height: 8)
+                            .scaleEffect(viewModel.selectedDashboardType == type ? 1.3 : 1.0)
+                        
+                        Text(type.displayName)
+                            .font(.system(size: 11, weight: viewModel.selectedDashboardType == type ? .semibold : .regular))
+                            .foregroundStyle(viewModel.selectedDashboardType == type ? themeManager.perfolioTheme.textPrimary : themeManager.perfolioTheme.textTertiary)
+                    }
+                    .frame(width: 70)
+                }
+            }
+        }
+        .animation(.spring(response: 0.3), value: viewModel.selectedDashboardType)
+    }
+    
+    // MARK: - Scrollable Dashboard Content
+    
+    private var regularDashboardContentScrollable: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                regularDashboardContent
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
+        .background(themeManager.perfolioTheme.primaryBackground)
+    }
+    
+    private var standardDashboardContentScrollable: some View {
+        StandardDashboardView(onNavigateToTab: onNavigateToTab)
+    }
+    
+    private var momDashboardContentScrollable: some View {
+        momDashboardContent
+    }
+    
+    // MARK: - Mom Dashboard Content
+    
+    private var momDashboardContent: some View {
+        MomDashboardView(
+            dashboardViewModel: viewModel,
+            onNavigateToDeposit: {
+                // Navigate to Wallet tab (Deposit section)
+                onNavigateToTab?("wallet")
+            }
+        )
+        .environmentObject(themeManager)
     }
 }
 

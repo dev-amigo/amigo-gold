@@ -15,8 +15,16 @@ struct SettingsView: View {
                 // Theme Section
                 themeSection
                 
+                // Preferences Section (NEW)
+                preferencesSection
+                
                 // App Settings Section
                 appSettingsSection
+                
+                #if DEBUG
+                // Developer Section (DEBUG only)
+                developerSection
+                #endif
                 
                 // Support & Legal Section
                 supportLegalSection
@@ -160,6 +168,74 @@ struct SettingsView: View {
         }
     }
     
+    // MARK: - Preferences Section
+    
+    private var preferencesSection: some View {
+        Section {
+            // Notifications Toggle
+            HStack(spacing: 12) {
+                Image(systemName: "bell.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                    .symbolRenderingMode(.hierarchical)
+                    .frame(width: 28, alignment: .center)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Notifications")
+                        .font(.system(size: 17, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    Text("Price alerts & updates")
+                        .font(.system(size: 13))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: $viewModel.notificationsEnabled)
+                    .labelsHidden()
+                    .tint(themeManager.perfolioTheme.tintColor)
+                    .onChange(of: viewModel.notificationsEnabled) { _, newValue in
+                        HapticManager.shared.light()
+                        viewModel.updateNotificationPreference(newValue)
+                    }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+            
+            // Currency Selection
+            NavigationLink {
+                CurrencySettingsView()
+                    .environmentObject(themeManager)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "dollarsign.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 28, alignment: .center)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Default Currency")
+                            .font(.system(size: 17, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("Display amounts in \(viewModel.currentCurrency)")
+                            .font(.system(size: 13))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Text(viewModel.currencySymbol)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+        } header: {
+            Text("Preferences")
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+        }
+    }
+    
     // MARK: - App Settings Section
     
     private var appSettingsSection: some View {
@@ -230,10 +306,97 @@ struct SettingsView: View {
         }
     }
     
+    // MARK: - Developer Section
+    
+    #if DEBUG
+    private var developerSection: some View {
+        Section {
+            HStack(spacing: 12) {
+                Image(systemName: "wrench.and.screwdriver.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.orange)
+                    .symbolRenderingMode(.hierarchical)
+                    .frame(width: 28, alignment: .center)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Developer Mode")
+                        .font(.system(size: 17, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    Text("Experimental features for testing")
+                        .font(.system(size: 13))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: $viewModel.isDevModeEnabled)
+                    .labelsHidden()
+                    .tint(.orange)
+                    .onChange(of: viewModel.isDevModeEnabled) { _, newValue in
+                        HapticManager.shared.medium()
+                    }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+        } header: {
+            Text("Developer")
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+        } footer: {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Enables experimental features:")
+                    .font(.system(size: 13))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                
+                Text("• Alchemy AA wallet for gas-sponsored transactions")
+                    .font(.system(size: 12))
+                    .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                
+                Text("• Alternative transaction signing methods")
+                    .font(.system(size: 12))
+                    .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                
+                Text("⚠️ For testing purposes only. Not available in production builds.")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.orange)
+                    .padding(.top, 4)
+            }
+        }
+    }
+    #endif
+    
     // MARK: - Support & Legal Section
     
     private var supportLegalSection: some View {
         Section {
+            // FAQ
+            NavigationLink {
+                FAQView()
+                    .environmentObject(themeManager)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "questionmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 28, alignment: .center)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("FAQ")
+                            .font(.system(size: 17, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("Frequently asked questions")
+                            .font(.system(size: 13))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+            
             // Email Support
             Button {
                 HapticManager.shared.light()

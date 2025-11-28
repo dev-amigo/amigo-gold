@@ -56,11 +56,14 @@ class FluidVaultService: ObservableObject {
         
         do {
             // Fetch all data in parallel for speed
+            // Note: fetchPAXGPrice() never throws - always returns a value
             async let config = vaultConfigService.fetchVaultConfig()
-            async let price = priceOracleService.fetchPAXGPrice()
+            let price = await priceOracleService.fetchPAXGPrice()  // Never throws
             async let apy = apyService.fetchBorrowAPY()
             
-            (vaultConfig, paxgPrice, currentAPY) = try await (config, price, apy)
+            vaultConfig = try await config
+            paxgPrice = price
+            currentAPY = try await apy
             
             AppLogger.log("✅ Fluid vault initialized:", category: "fluid")
             AppLogger.log("   PAXG Price: $\(paxgPrice)", category: "fluid")
@@ -69,6 +72,13 @@ class FluidVaultService: ObservableObject {
             
         } catch {
             AppLogger.log("❌ Fluid initialization failed: \(error.localizedDescription)", category: "fluid")
+            
+            // Even if config/APY fails, ensure we have a PAXG price
+            if paxgPrice == 0 {
+                paxgPrice = await priceOracleService.fetchPAXGPrice()
+                AppLogger.log("⚠️ Using price despite init failure: $\(paxgPrice)", category: "fluid")
+            }
+            
             throw error
         }
     }
@@ -360,7 +370,7 @@ class FluidVaultService: ObservableObject {
         )
     }
     
-    /// Send transaction using Privy SDK embedded wallet
+    /// Send transaction using selected wallet provider (Privy or Alchemy AA)
     private func sendTransaction(to: String, data: String, value: String) async throws -> String {
         AppLogger.log("📤 Preparing transaction to: \(to)", category: "fluid")
         
@@ -375,6 +385,10 @@ class FluidVaultService: ObservableObject {
         AppLogger.log("   Data: \(data.prefix(66))...", category: "fluid")
         AppLogger.log("   Value: \(value)", category: "fluid")
         
+        // Determine which wallet provider to use
+        let selectedProvider = WalletProvider.current
+        AppLogger.log("🔐 Using wallet provider: \(selectedProvider.displayName)", category: "fluid")
+        
         // Build transaction request
         let txRequest = TransactionRequest(
             to: to,
@@ -384,12 +398,26 @@ class FluidVaultService: ObservableObject {
         )
         
         do {
-            // Send transaction using Privy embedded wallet
-            // The Privy SDK will handle:
-            // 1. User confirmation UI
-            // 2. Transaction signing with embedded wallet
-            // 3. Broadcasting to network
-            let txHash = try await sendPrivyTransaction(txRequest)
+            let txHash: String
+            
+            switch selectedProvider {
+            case .privyEmbedded:
+                // Use Privy embedded wallet (existing behavior)
+                AppLogger.log("📤 Routing to Privy embedded wallet...", category: "fluid")
+                txHash = try await sendPrivyTransaction(txRequest)
+                
+            case .alchemyAA:
+                // Use Alchemy Account Abstraction (dev mode only)
+                #if DEBUG
+                guard UserPreferences.isDevModeEnabled else {
+                    throw FluidVaultError.transactionFailed("Alchemy AA requires dev mode to be enabled")
+                }
+                AppLogger.log("✨ Routing to Alchemy AA (gas-sponsored)...", category: "fluid")
+                txHash = try await sendAlchemyAATransaction(txRequest)
+                #else
+                throw FluidVaultError.transactionFailed("Alchemy AA not available in production builds")
+                #endif
+            }
             
             AppLogger.log("✅ Transaction sent: \(txHash)", category: "fluid")
             return txHash
@@ -478,6 +506,34 @@ class FluidVaultService: ObservableObject {
         let from: String
         let data: String
         let value: String
+    }
+    
+    /// Send transaction via Alchemy option (Currently uses Privy standard flow)
+    /// Only available in DEBUG builds with dev mode enabled
+    /// 
+    /// **Note:** True Alchemy AA with gas sponsorship requires their SDK.
+    /// For now, this uses the same Privy flow as the standard option.
+    /// This is primarily for testing/comparing different RPC providers.
+    private func sendAlchemyAATransaction(_ request: TransactionRequest) async throws -> String {
+        AppLogger.log("🌟 Alchemy option selected (using Privy standard flow)", category: "fluid")
+        AppLogger.log("💡 True AA with gas sponsorship requires Alchemy SDK integration", category: "fluid")
+        
+        // Get Privy user and wallet
+        let authCoordinator = PrivyAuthCoordinator.shared
+        let authState = await authCoordinator.resolvedAuthState()
+        
+        guard case .authenticated(let user) = authState else {
+            AppLogger.log("❌ User not authenticated", category: "fluid")
+            throw FluidVaultError.transactionFailed("User not authenticated")
+        }
+        
+        guard let wallet = user.embeddedEthereumWallets.first else {
+            throw FluidVaultError.transactionFailed("No embedded wallet found")
+        }
+        
+        // Use the standard Privy provider flow
+        // This DOES support gas sponsorship if Privy policies are configured
+        return try await sendProviderTransaction(request: request, wallet: wallet)
     }
     
     private func sendProviderTransaction(

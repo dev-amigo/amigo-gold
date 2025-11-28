@@ -31,17 +31,21 @@ final class LandingViewModel: ObservableObject {
     @Published var alert: AlertConfig?
     @Published var email: String = ""
     @Published var emailLoginState: EmailLoginState = .emailInput
+    @Published var showInitialOnboarding: Bool = false
 
     private let authCoordinator: PrivyAuthenticating
     private let environment: EnvironmentConfiguration
     private let onAuthenticated: () -> Void
+    private let onOnboardingRequired: () -> Void
 
     init(authCoordinator: PrivyAuthenticating = PrivyAuthCoordinator.shared, 
          environment: EnvironmentConfiguration = .current,
-         onAuthenticated: @escaping () -> Void) {
+         onAuthenticated: @escaping () -> Void,
+         onOnboardingRequired: @escaping () -> Void = {}) {
         self.authCoordinator = authCoordinator
         self.environment = environment
         self.onAuthenticated = onAuthenticated
+        self.onOnboardingRequired = onOnboardingRequired
     }
 
     func onAppear() {
@@ -111,11 +115,24 @@ final class LandingViewModel: ObservableObject {
                 AppLogger.log("🎉 Wallet info saved! Privy REST API now active!", category: "auth")
                 
                 isLoading = false
-                alert = AlertConfig(
-                    title: L10n.string(.landingAlertSuccessTitle),
-                    message: String(format: L10n.string(.landingAlertSuccessMessage), user.id)
-                )
-                onAuthenticated()
+                
+                // Check if user needs to complete initial onboarding
+                let hasCompletedOnboarding = UserPreferences.hasCompletedOnboarding(for: email)
+                
+                if hasCompletedOnboarding {
+                    // User has completed onboarding, proceed to dashboard
+                    alert = AlertConfig(
+                        title: L10n.string(.landingAlertSuccessTitle),
+                        message: String(format: L10n.string(.landingAlertSuccessMessage), user.id)
+                    )
+                    onAuthenticated()
+                    AppLogger.log("✅ Onboarding already completed, proceeding to dashboard", category: "auth")
+                } else {
+                    // First-time user, show initial onboarding
+                    showInitialOnboarding = true
+                    onOnboardingRequired()
+                    AppLogger.log("🎯 First-time user, showing initial onboarding", category: "auth")
+                }
             } catch WalletError.creationFailed(let message) {
                 isLoading = false
                 alert = AlertConfig(

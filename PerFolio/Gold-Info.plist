@@ -2,36 +2,40 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-		<key>NSExceptionDomains</key>
-		<dict>
-			<key>eth-mainnet.g.alchemy.com</key>
-			<dict>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
-				<key>NSTemporaryExceptionRequiresForwardSecrecy</key>
-				<false/>
-				<key>NSTemporaryExceptionAllowsInsecureHTTPSLoads</key>
-				<false/>
-			</dict>
-			<key> https://rpc.ankr.com/eth</key>
-			<dict>
-				<key>NSIncludesSubdomains</key>
-				<true/>
-				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
-				<false/>
-				<key>NSTemporaryExceptionRequiresForwardSecrecy</key>
-				<false/>
-				<key>NSTemporaryExceptionAllowsInsecureHTTPSLoads</key>
-				<false/>
-			</dict>
-		</dict>
-	</dict>
+	<key>AG1InchAPIKey</key>
+	<string>$(ONEINCH_API_KEY)</string>
+	<key>AGAPIBaseURL</key>
+	<string>$(API_BASE_URL)</string>
+	<key>AGAlchemyAPIKey</key>
+	<string>$(ALCHEMY_API_KEY)</string>
+	<key>AGCoinGeckoAPIKey</key>
+	<string>$(COINGECKO_API_KEY)</string>
+	<key>AGDeepLinkScheme</key>
+	<string>$(DEEP_LINK_SCHEME)</string>
+	<key>AGDefaultOAuthProvider</key>
+	<string>$(DEFAULT_OAUTH_PROVIDER)</string>
+	<key>AGEnablePrivySponsoredRPC</key>
+	<string>$(ENABLE_PRIVY_SPONSORED_RPC)</string>
+	<key>AGEnvironmentName</key>
+	<string>$(APP_ENVIRONMENT)</string>
+	<key>AGEthereumRPCFallback</key>
+	<string>$(ETHEREUM_RPC_FALLBACK)</string>
+	<key>AGOnMetaAPIKey</key>
+	<string>$(ONMETA_API_KEY)</string>
+	<key>AGOnMetaBaseURL</key>
+	<string>$(ONMETA_BASE_URL)</string>
+	<key>AGPrivyAppID</key>
+	<string>$(PRIVY_APP_ID)</string>
+	<key>AGPrivyAppSecret</key>
+	<string>$(PRIVY_APP_SECRET)</string>
+	<key>AGPrivyClientID</key>
+	<string>$(PRIVY_APP_CLIENT_ID)</string>
+	<key>AGPrivyJWKSURL</key>
+	<string>$(PRIVY_JWKS_URL)</string>
+	<key>AGTransakAPIKey</key>
+	<string>$(TRANSAK_API_KEY)</string>
+	<key>AGZeroXAPIKey</key>
+	<string>$(ZEROX_API_KEY)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>
@@ -46,12 +50,53 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.transak.perfolio</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(DEEP_LINK_SCHEME)</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key> https://rpc.ankr.com/eth</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPSLoads</key>
+				<false/>
+				<key>NSTemporaryExceptionRequiresForwardSecrecy</key>
+				<false/>
+			</dict>
+			<key>eth-mainnet.g.alchemy.com</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSTemporaryExceptionAllowsInsecureHTTPSLoads</key>
+				<false/>
+				<key>NSTemporaryExceptionRequiresForwardSecrecy</key>
+				<false/>
+			</dict>
+		</dict>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -69,65 +114,20 @@
 			</array>
 		</dict>
 	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
-	<key>UILaunchScreen</key>
-	<dict/>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.transak.perfolio</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>$(DEEP_LINK_SCHEME)</string>
-			</array>
-		</dict>
-	</array>
-	<key>AGEnvironmentName</key>
-	<string>$(APP_ENVIRONMENT)</string>
-	<key>AGAPIBaseURL</key>
-	<string>$(API_BASE_URL)</string>
-	<key>AGPrivyAppID</key>
-	<string>$(PRIVY_APP_ID)</string>
-	<key>AGPrivyClientID</key>
-	<string>$(PRIVY_APP_CLIENT_ID)</string>
-	<key>AGPrivyAppSecret</key>
-	<string>$(PRIVY_APP_SECRET)</string>
-	<key>AGPrivyJWKSURL</key>
-	<string>$(PRIVY_JWKS_URL)</string>
-	<key>AGAlchemyAPIKey</key>
-	<string>$(ALCHEMY_API_KEY)</string>
-	<key>AGZeroXAPIKey</key>
-	<string>$(ZEROX_API_KEY)</string>
-	<key>AGEthereumRPCFallback</key>
-	<string>$(ETHEREUM_RPC_FALLBACK)</string>
-	<key>AGDeepLinkScheme</key>
-	<string>$(DEEP_LINK_SCHEME)</string>
-	<key>AGDefaultOAuthProvider</key>
-	<string>$(DEFAULT_OAUTH_PROVIDER)</string>
-	<key>AGEnablePrivySponsoredRPC</key>
-	<string>$(ENABLE_PRIVY_SPONSORED_RPC)</string>
-	<key>AGOnMetaAPIKey</key>
-	<string>$(ONMETA_API_KEY)</string>
-	<key>AGOnMetaBaseURL</key>
-	<string>$(ONMETA_BASE_URL)</string>
-	<key>AG1InchAPIKey</key>
-	<string>$(ONEINCH_API_KEY)</string>
-	<key>AGTransakAPIKey</key>
-	<string>$(TRANSAK_API_KEY)</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 </dict>
 </plist>

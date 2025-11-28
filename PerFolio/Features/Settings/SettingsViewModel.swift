@@ -23,6 +23,31 @@ final class SettingsViewModel: ObservableObject {
     @Published var showingLogoutConfirmation = false
     @Published var addressCopied = false
     
+    @Published var notificationsEnabled: Bool {
+        didSet {
+            UserPreferences.notificationsEnabled = notificationsEnabled
+        }
+    }
+    
+    #if DEBUG
+    @Published var isDevModeEnabled: Bool {
+        didSet {
+            UserPreferences.isDevModeEnabled = isDevModeEnabled
+            AppLogger.log("🔧 Dev Mode toggled: \(isDevModeEnabled)", category: "settings")
+        }
+    }
+    #endif
+    
+    // MARK: - Currency Preferences
+    
+    var currentCurrency: String {
+        UserPreferences.defaultCurrency
+    }
+    
+    var currencySymbol: String {
+        UserPreferences.currencySymbol
+    }
+    
     // MARK: - User Info
     
     var userEmail: String {
@@ -75,6 +100,10 @@ final class SettingsViewModel: ObservableObject {
     init() {
         self.isHapticEnabled = HapticManager.shared.isHapticEnabled
         self.isSoundEnabled = HapticManager.shared.isSoundEnabled
+        self.notificationsEnabled = UserPreferences.notificationsEnabled
+        #if DEBUG
+        self.isDevModeEnabled = UserPreferences.isDevModeEnabled
+        #endif
     }
     
     // MARK: - Actions
@@ -116,6 +145,16 @@ final class SettingsViewModel: ObservableObject {
     func openLibraryLicense(_ library: Library) {
         safariURL = library.licenseURL
         showingSafari = true
+    }
+    
+    func updateNotificationPreference(_ enabled: Bool) {
+        UserPreferences.notificationsEnabled = enabled
+        AppLogger.log("✅ Notifications preference updated: \(enabled)", category: "settings")
+        
+        // Optionally check actual system permission status
+        Task {
+            await NotificationService.shared.checkPermissionStatus()
+        }
     }
     
     func showLogoutConfirmation() {
