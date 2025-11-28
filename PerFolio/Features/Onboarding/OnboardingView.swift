@@ -7,24 +7,29 @@ struct OnboardingView: View {
     
     private let pages: [OnboardingPage] = [
         OnboardingPage(
-            icon: "circle.grid.cross.fill",
-            title: "Welcome to PerFolio",
-            subtitle: "Your digital gold vault with instant liquidity"
+            icon: "sparkles",
+            title: "Your Gold Can Earn Money",
+            subtitle: "Save in digital gold and borrow cash instantly whenever you need it. No bank visits. No paperwork. Just your phone."
         ),
         OnboardingPage(
-            icon: "creditcard.fill",
-            title: "Buy Digital Gold",
-            subtitle: "Deposit cash via UPI and convert to tokenized gold (PAXG)"
+            icon: "arrow.3.trianglepath",
+            title: "3 Simple Steps",
+            subtitle: "Deposit money with UPI → Buy digital gold (PAXG) → Borrow cash using your gold. Your gold stays yours. You get cash when needed."
         ),
         OnboardingPage(
-            icon: "arrow.left.arrow.right",
-            title: "Instant Swaps",
-            subtitle: "Seamlessly swap between USDC and gold tokens anytime"
+            icon: "chart.line.uptrend.xyaxis",
+            title: "Your Gold Grows, You Borrow",
+            subtitle: "While your gold price increases, you can borrow cash anytime. When gold goes up, you can borrow even more! No bank. No questions asked."
         ),
         OnboardingPage(
-            icon: "shield.checkered",
-            title: "Secure Gold Loans",
-            subtitle: "Borrow USDC instantly against your gold with competitive rates"
+            icon: "checkmark.shield.fill",
+            title: "Safe, Secure, Transparent",
+            subtitle: "Your gold is protected by blockchain technology. No one can take it. No hidden fees. See everything in real-time."
+        ),
+        OnboardingPage(
+            icon: "rocket.fill",
+            title: "Ready in 5 Minutes",
+            subtitle: "Start with any amount. Deposit, buy gold, and you're done. No minimum balance. No monthly charges."
         )
     ]
     
