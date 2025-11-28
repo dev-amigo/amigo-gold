@@ -19,8 +19,11 @@ struct OnboardingTimelineView: View {
             
             // TipKit tip below Get Started (only for first-time users)
             TipView(onboardingTip, arrowEdge: .top)
-                .tipBackground(themeManager.perfolioTheme.secondaryBackground)
+                .tipBackground(
+                    Color(white: 0.2, opacity: 1.0) // Lighter than background for visibility
+                )
                 .tipCornerRadius(12)
+                .shadow(color: .black.opacity(0.4), radius: 8, y: 4)
         }
     }
     
