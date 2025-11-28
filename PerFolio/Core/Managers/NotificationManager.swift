@@ -2,6 +2,31 @@ import Foundation
 import Combine
 
 /// Centralized notification management system
+/// 
+/// **IMPORTANT: When to Create Notifications**
+/// Notifications should ONLY be created from REAL EVENTS, not from UI/dashboard loads:
+/// 
+/// ✅ DO create notifications from:
+/// - Completed transactions (borrow, repay, swap, deposit, withdraw)
+/// - Real price alerts (monitoring service detects significant price changes)
+/// - Loan ratio threshold crossed (compare previous vs current)
+/// - Push notifications from backend
+/// - System updates or important announcements
+/// 
+/// ❌ DO NOT create notifications from:
+/// - Dashboard/View loading or appearing
+/// - Data refresh or reload
+/// - Currency changes
+/// - UI state updates
+/// 
+/// Example usage:
+/// ```
+/// // After successful borrow transaction
+/// NotificationManager.shared.addTransactionNotification(
+///     message: "Successfully borrowed 500 USDC",
+///     actionButton: NotificationAction(title: "View Loan", destination: "loans", style: .primary)
+/// )
+/// ```
 @MainActor
 final class NotificationManager: ObservableObject {
     static let shared = NotificationManager()
@@ -20,6 +45,8 @@ final class NotificationManager: ObservableObject {
     // MARK: - Public Methods
     
     /// Add a new notification
+    /// NOTE: Only call this from real events (transactions, price alerts, etc.)
+    /// NOT from dashboard/view loading
     func addNotification(_ notification: AppNotification) {
         notifications.insert(notification, at: 0)
         

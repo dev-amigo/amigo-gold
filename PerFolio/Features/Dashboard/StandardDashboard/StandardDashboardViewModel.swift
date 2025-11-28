@@ -86,7 +86,6 @@ final class StandardDashboardViewModel: ObservableObject {
     private let currencyService = CurrencyService.shared
     private let fluidVaultService = FluidVaultService()
     private let erc20Contract = ERC20Contract()
-    private let notificationManager = NotificationManager.shared
     private var cancellables = Set<AnyCancellable>()
     
     private var paxgPriceUSD: Decimal = 0
@@ -171,9 +170,6 @@ final class StandardDashboardViewModel: ObservableObject {
             // STEP 8: Calculate safety status
             updateSafetyStatus()
             
-            // STEP 9: Generate alerts
-            generateAlerts()
-            
             isLoading = false
             
         } catch {
@@ -227,38 +223,6 @@ final class StandardDashboardViewModel: ObservableObject {
         
         loanRatioPercent = String(format: "%.0f", loanRatio as NSDecimalNumber)
         maxSafeLTV = String(format: "%.0f", maxLTV as NSDecimalNumber)
-    }
-    
-    private func generateAlerts() {
-        // Push alerts to NotificationManager instead of storing locally
-        
-        // Price movement alert (only if significant)
-        if isPositiveChange && todayChange != "$0.00" {
-            notificationManager.addPriceChangeAlert(
-                message: "Your gold increased today by \(todayChange)",
-                isPositive: true
-            )
-        } else if !isPositiveChange && todayChange != "$0.00" {
-            notificationManager.addPriceChangeAlert(
-                message: "Your gold decreased today by \(todayChange)",
-                isPositive: false
-            )
-        }
-        
-        // Loan ratio alerts (only if user has loans)
-        if borrowedAmountUSD > 0 {
-            if loanRatio >= 70 {
-                notificationManager.addSafetyAlert(
-                    message: "Loan ratio is \(loanRatioPercent)%. Add gold or repay to avoid liquidation.",
-                    priority: loanRatio >= 85 ? .urgent : .high
-                )
-            } else if loanRatio >= 40 {
-                notificationManager.addSafetyAlert(
-                    message: "Loan ratio reached \(loanRatioPercent)%. You are still safe but monitor the gold price.",
-                    priority: .normal
-                )
-            }
-        }
     }
     
     // MARK: - Currency Conversion
