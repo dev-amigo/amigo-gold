@@ -21,6 +21,11 @@ struct SettingsView: View {
                 // App Settings Section
                 appSettingsSection
                 
+                #if DEBUG
+                // Developer Section (DEBUG only)
+                developerSection
+                #endif
+                
                 // Support & Legal Section
                 supportLegalSection
                 
@@ -300,6 +305,63 @@ struct SettingsView: View {
                 .foregroundStyle(themeManager.perfolioTheme.textPrimary)
         }
     }
+    
+    // MARK: - Developer Section
+    
+    #if DEBUG
+    private var developerSection: some View {
+        Section {
+            HStack(spacing: 12) {
+                Image(systemName: "wrench.and.screwdriver.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.orange)
+                    .symbolRenderingMode(.hierarchical)
+                    .frame(width: 28, alignment: .center)
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Developer Mode")
+                        .font(.system(size: 17, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                    Text("Experimental features for testing")
+                        .font(.system(size: 13))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: $viewModel.isDevModeEnabled)
+                    .labelsHidden()
+                    .tint(.orange)
+                    .onChange(of: viewModel.isDevModeEnabled) { _, newValue in
+                        HapticManager.shared.medium()
+                    }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+        } header: {
+            Text("Developer")
+                .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+        } footer: {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Enables experimental features:")
+                    .font(.system(size: 13))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                
+                Text("• Alchemy AA wallet for gas-sponsored transactions")
+                    .font(.system(size: 12))
+                    .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                
+                Text("• Alternative transaction signing methods")
+                    .font(.system(size: 12))
+                    .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                
+                Text("⚠️ For testing purposes only. Not available in production builds.")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.orange)
+                    .padding(.top, 4)
+            }
+        }
+    }
+    #endif
     
     // MARK: - Support & Legal Section
     

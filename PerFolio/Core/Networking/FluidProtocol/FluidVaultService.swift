@@ -360,7 +360,7 @@ class FluidVaultService: ObservableObject {
         )
     }
     
-    /// Send transaction using Privy SDK embedded wallet
+    /// Send transaction using selected wallet provider (Privy or Alchemy AA)
     private func sendTransaction(to: String, data: String, value: String) async throws -> String {
         AppLogger.log("📤 Preparing transaction to: \(to)", category: "fluid")
         
@@ -375,6 +375,10 @@ class FluidVaultService: ObservableObject {
         AppLogger.log("   Data: \(data.prefix(66))...", category: "fluid")
         AppLogger.log("   Value: \(value)", category: "fluid")
         
+        // Determine which wallet provider to use
+        let selectedProvider = WalletProvider.current
+        AppLogger.log("🔐 Using wallet provider: \(selectedProvider.displayName)", category: "fluid")
+        
         // Build transaction request
         let txRequest = TransactionRequest(
             to: to,
@@ -384,12 +388,26 @@ class FluidVaultService: ObservableObject {
         )
         
         do {
-            // Send transaction using Privy embedded wallet
-            // The Privy SDK will handle:
-            // 1. User confirmation UI
-            // 2. Transaction signing with embedded wallet
-            // 3. Broadcasting to network
-            let txHash = try await sendPrivyTransaction(txRequest)
+            let txHash: String
+            
+            switch selectedProvider {
+            case .privyEmbedded:
+                // Use Privy embedded wallet (existing behavior)
+                AppLogger.log("📤 Routing to Privy embedded wallet...", category: "fluid")
+                txHash = try await sendPrivyTransaction(txRequest)
+                
+            case .alchemyAA:
+                // Use Alchemy Account Abstraction (dev mode only)
+                #if DEBUG
+                guard UserPreferences.isDevModeEnabled else {
+                    throw FluidVaultError.transactionFailed("Alchemy AA requires dev mode to be enabled")
+                }
+                AppLogger.log("✨ Routing to Alchemy AA (gas-sponsored)...", category: "fluid")
+                txHash = try await sendAlchemyAATransaction(txRequest)
+                #else
+                throw FluidVaultError.transactionFailed("Alchemy AA not available in production builds")
+                #endif
+            }
             
             AppLogger.log("✅ Transaction sent: \(txHash)", category: "fluid")
             return txHash
@@ -478,6 +496,46 @@ class FluidVaultService: ObservableObject {
         let from: String
         let data: String
         let value: String
+    }
+    
+    /// Send transaction via Alchemy Account Abstraction (gas-sponsored)
+    /// Only available in DEBUG builds with dev mode enabled
+    private func sendAlchemyAATransaction(_ request: TransactionRequest) async throws -> String {
+        AppLogger.log("🌟 Sending via Alchemy AA with gas sponsorship", category: "fluid")
+        
+        // Get Alchemy API key from bundle
+        guard let alchemyAPIKey = Bundle.main.object(forInfoDictionaryKey: "AGAlchemyAPIKey") as? String,
+              !alchemyAPIKey.isEmpty else {
+            throw FluidVaultError.transactionFailed("Alchemy API key not configured")
+        }
+        
+        AppLogger.log("✅ Alchemy API key found", category: "fluid")
+        
+        // Initialize Alchemy AA Service
+        let alchemyService = AlchemyAAService(
+            apiKey: alchemyAPIKey,
+            network: "eth-mainnet"
+        )
+        
+        AppLogger.log("📤 Sending transaction with gas sponsorship...", category: "fluid")
+        AppLogger.log("   From: \(request.from)", category: "fluid")
+        AppLogger.log("   To: \(request.to)", category: "fluid")
+        AppLogger.log("   Value: \(request.value)", category: "fluid")
+        AppLogger.log("   Data: \(request.data.prefix(66))...", category: "fluid")
+        
+        // Send sponsored transaction
+        let txHash = try await alchemyService.sendSponsoredTransaction(
+            to: request.to,
+            data: request.data,
+            value: request.value,
+            from: request.from
+        )
+        
+        AppLogger.log("✅ Alchemy AA transaction submitted: \(txHash)", category: "fluid")
+        AppLogger.log("   View on Etherscan: https://etherscan.io/tx/\(txHash)", category: "fluid")
+        AppLogger.log("   Gas was sponsored by Alchemy", category: "fluid")
+        
+        return txHash
     }
     
     private func sendProviderTransaction(

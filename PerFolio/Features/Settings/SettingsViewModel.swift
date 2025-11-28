@@ -29,6 +29,15 @@ final class SettingsViewModel: ObservableObject {
         }
     }
     
+    #if DEBUG
+    @Published var isDevModeEnabled: Bool {
+        didSet {
+            UserPreferences.isDevModeEnabled = isDevModeEnabled
+            AppLogger.log("🔧 Dev Mode toggled: \(isDevModeEnabled)", category: "settings")
+        }
+    }
+    #endif
+    
     // MARK: - Currency Preferences
     
     var currentCurrency: String {
@@ -92,6 +101,9 @@ final class SettingsViewModel: ObservableObject {
         self.isHapticEnabled = HapticManager.shared.isHapticEnabled
         self.isSoundEnabled = HapticManager.shared.isSoundEnabled
         self.notificationsEnabled = UserPreferences.notificationsEnabled
+        #if DEBUG
+        self.isDevModeEnabled = UserPreferences.isDevModeEnabled
+        #endif
     }
     
     // MARK: - Actions

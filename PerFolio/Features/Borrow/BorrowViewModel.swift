@@ -30,6 +30,11 @@ final class BorrowViewModel: ObservableObject {
     @Published var showingTransactionModal = false
     @Published var showingAPYChart = false
     
+    #if DEBUG
+    @Published var showingWalletProviderSelection = false
+    @Published var selectedWalletProvider: WalletProvider = .current
+    #endif
+    
     enum ViewState {
         case loading
         case ready
@@ -211,6 +216,17 @@ final class BorrowViewModel: ObservableObject {
     // MARK: - Execute Borrow
     
     func executeBorrow() async {
+        // STEP 1: Check if dev mode is enabled - show wallet provider selection
+        #if DEBUG
+        if UserPreferences.isDevModeEnabled && !showingWalletProviderSelection {
+            // Show provider selection sheet first
+            AppLogger.log("🔧 Dev mode active - showing wallet provider selection", category: "borrow")
+            showingWalletProviderSelection = true
+            return
+        }
+        #endif
+        
+        // STEP 2: Validate inputs
         guard validationError == nil else {
             AppLogger.log("❌ Cannot execute: \(validationError ?? "Unknown error")", category: "borrow")
             return
@@ -223,6 +239,15 @@ final class BorrowViewModel: ObservableObject {
             transactionState = .failed("Invalid request parameters")
             return
         }
+        
+        // Log selected provider
+        #if DEBUG
+        let provider = WalletProvider.current
+        AppLogger.log("🔐 Executing borrow with: \(provider.displayName)", category: "borrow")
+        if provider.supportsGasSponsorship {
+            AppLogger.log("✨ Gas sponsorship: ENABLED", category: "borrow")
+        }
+        #endif
         
         showingTransactionModal = true
         

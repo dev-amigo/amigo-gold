@@ -32,6 +32,8 @@ struct UserPreferences {
         static let preferredDashboard = "preferredDashboard"
         static let dashboardBaselineValue = "dashboardBaselineValue"
         static let dashboardBaselineDate = "dashboardBaselineDate"
+        static let isDevModeEnabled = "isDevModeEnabled"
+        static let selectedWalletProvider = "selectedWalletProvider"
     }
     
     // MARK: - Currency Preferences
@@ -212,6 +214,38 @@ struct UserPreferences {
         }
         set {
             UserDefaults.standard.set(newValue, forKey: Keys.dashboardBaselineDate)
+        }
+    }
+    
+    // MARK: - Developer Settings
+    
+    /// Developer mode toggle (only available in DEBUG builds)
+    /// Enables experimental features like Alchemy AA wallet
+    static var isDevModeEnabled: Bool {
+        get {
+            #if DEBUG
+            return UserDefaults.standard.bool(forKey: Keys.isDevModeEnabled)
+            #else
+            return false  // Force disable in production
+            #endif
+        }
+        set {
+            #if DEBUG
+            UserDefaults.standard.set(newValue, forKey: Keys.isDevModeEnabled)
+            AppLogger.log("🔧 Dev Mode: \(newValue ? "ENABLED" : "DISABLED")", category: "preferences")
+            #endif
+        }
+    }
+    
+    /// Selected wallet provider for transactions (Privy or Alchemy AA)
+    /// Only affects behavior when dev mode is enabled
+    static var selectedWalletProvider: String {
+        get {
+            UserDefaults.standard.string(forKey: Keys.selectedWalletProvider) ?? "privy"
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Keys.selectedWalletProvider)
+            AppLogger.log("🔐 Wallet Provider: \(newValue)", category: "preferences")
         }
     }
     

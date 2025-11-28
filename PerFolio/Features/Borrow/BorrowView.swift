@@ -32,6 +32,20 @@ struct BorrowView: View {
         .sheet(isPresented: $viewModel.showingAPYChart) {
             APYChartView()
         }
+        #if DEBUG
+        .sheet(isPresented: $viewModel.showingWalletProviderSelection) {
+            WalletProviderSelectionSheet(
+                selectedProvider: $viewModel.selectedWalletProvider,
+                onProceed: {
+                    // Continue with borrow execution after provider selection
+                    Task {
+                        await viewModel.executeBorrow()
+                    }
+                }
+            )
+            .environmentObject(themeManager)
+        }
+        #endif
     }
     
     // MARK: - Loading State
@@ -103,6 +117,14 @@ struct BorrowView: View {
             VStack(spacing: 24) {
                 headerSection
                 balanceSection
+                
+                #if DEBUG
+                // Dev Mode Warning Banner
+                if UserPreferences.isDevModeEnabled {
+                    devModeWarningBanner
+                }
+                #endif
+                
                 collateralInputCard
                 borrowAmountCard
                 quickLTVButtons
@@ -529,6 +551,17 @@ struct BorrowView: View {
             return .red
         }
     }
+    
+    // MARK: - Dev Mode Warning Banner
+    
+    #if DEBUG
+    private var devModeWarningBanner: some View {
+        PerFolioInfoBanner(
+            "Dev Mode Active: Using \(WalletProvider.current.displayName)" + (WalletProvider.current.supportsGasSponsorship ? " (Gas Sponsored)" : ""),
+            style: .warning
+        )
+    }
+    #endif
 }
 
 // MARK: - Preview
