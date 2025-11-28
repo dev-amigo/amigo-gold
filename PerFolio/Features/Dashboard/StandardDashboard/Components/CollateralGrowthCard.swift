@@ -110,8 +110,8 @@ struct CollateralGrowthCard: View {
                     .background(
                         LinearGradient(
                             colors: [
-                                themeManager.perfolioTheme.tintColor,
-                                themeManager.perfolioTheme.tintColor.opacity(0.8)
+                                Color(red: 0.8, green: 0.6, blue: 0.2),  // Rich gold
+                                Color(red: 0.72, green: 0.52, blue: 0.15) // Deeper gold
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
