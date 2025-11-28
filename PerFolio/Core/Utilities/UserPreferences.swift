@@ -3,11 +3,13 @@ import Foundation
 /// Dashboard display type
 enum DashboardType: String, CaseIterable {
     case regular = "regular"
+    case standard = "standard"
     case simplified = "simplified"
     
     var displayName: String {
         switch self {
         case .regular: return "Regular"
+        case .standard: return "Standard"
         case .simplified: return "Simple"
         }
     }

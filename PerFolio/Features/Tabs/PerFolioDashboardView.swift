@@ -23,9 +23,12 @@ struct PerFolioDashboardView: View {
                     dashboardTypeToggle
                     
                     // Conditional dashboard display
-                    if viewModel.selectedDashboardType == .regular {
+                    switch viewModel.selectedDashboardType {
+                    case .regular:
                         regularDashboardContent
-                    } else {
+                    case .standard:
+                        StandardDashboardView()
+                    case .simplified:
                         momDashboardContent
                     }
                 }
@@ -522,7 +525,7 @@ struct PerFolioDashboardView: View {
                 }
             }
             .pickerStyle(.segmented)
-            .frame(width: 200)
+            .frame(width: 280) // Increased to fit 3 options
             .onChange(of: viewModel.selectedDashboardType) { _, newValue in
                 HapticManager.shared.light()
                 UserPreferences.preferredDashboard = newValue
