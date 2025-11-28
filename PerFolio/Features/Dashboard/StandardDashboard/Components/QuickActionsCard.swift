@@ -30,7 +30,8 @@ struct QuickActionsCard: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(themeManager.perfolioTheme.textTertiary)
                 }
-                .padding(20)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
                 .background(themeManager.perfolioTheme.secondaryBackground)
                 .cornerRadius(16)
             }
@@ -55,7 +56,8 @@ struct QuickActionsCard: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(themeManager.perfolioTheme.textTertiary)
                 }
-                .padding(20)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
                 .background(themeManager.perfolioTheme.secondaryBackground)
                 .cornerRadius(16)
             }
@@ -80,7 +82,8 @@ struct QuickActionsCard: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(themeManager.perfolioTheme.textTertiary)
                 }
-                .padding(20)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 16)
                 .background(themeManager.perfolioTheme.secondaryBackground)
                 .cornerRadius(16)
             }

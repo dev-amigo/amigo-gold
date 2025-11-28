@@ -69,7 +69,8 @@ struct BorrowingOverviewCard: View {
                     onRepayTap()
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 16)
         }
     }
 }

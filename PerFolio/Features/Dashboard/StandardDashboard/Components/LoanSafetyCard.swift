@@ -94,7 +94,8 @@ struct LoanSafetyCard: View {
                     .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(20)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 16)
         }
     }
     

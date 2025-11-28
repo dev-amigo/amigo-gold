@@ -120,7 +120,8 @@ struct CollateralGrowthCard: View {
                     .cornerRadius(14)
                 }
             }
-            .padding(20)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 16)
         }
     }
     
