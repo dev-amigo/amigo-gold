@@ -18,7 +18,7 @@ struct StandardDashboardView: View {
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 24)
+            .padding(.bottom, 20)
         }
         .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
         .onAppear {

@@ -77,7 +77,7 @@ struct MomDashboardView: View {
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 12)
+            .padding(.bottom, 20)
         }
         .scrollIndicators(.hidden)
         .background(themeManager.perfolioTheme.primaryBackground)

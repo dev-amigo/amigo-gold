@@ -13,14 +13,14 @@ struct OnboardingTimelineView: View {
     private let onboardingTip = OnboardingTip()
     
     var body: some View {
-        VStack(spacing: 12) {
-            // TipKit tip (only for first-time users)
-            TipView(onboardingTip, arrowEdge: .top)
-                .tipBackground(themeManager.perfolioTheme.secondaryBackground)
-                .tipCornerRadius(16)
-            
+        VStack(spacing: 8) {
             // Get Started section
             getStartedSection
+            
+            // TipKit tip below Get Started (only for first-time users)
+            TipView(onboardingTip, arrowEdge: .top)
+                .tipBackground(themeManager.perfolioTheme.secondaryBackground)
+                .tipCornerRadius(12)
         }
     }
     

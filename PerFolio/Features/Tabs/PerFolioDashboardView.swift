@@ -16,26 +16,33 @@ struct PerFolioDashboardView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Show onboarding timeline for ALL users at the top (collapsed by default)
-                    onboardingSection
+            VStack(spacing: 0) {
+                // Onboarding section at the top (fixed)
+                onboardingSection
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                
+                // Page indicator
+                dashboardPageIndicator
+                    .padding(.vertical, 12)
+                
+                // Swipeable dashboard pages
+                TabView(selection: $viewModel.selectedDashboardType) {
+                    regularDashboardContentScrollable
+                        .tag(DashboardType.regular)
                     
-                    // Dashboard type toggle
-                    dashboardTypeToggle
+                    standardDashboardContentScrollable
+                        .tag(DashboardType.standard)
                     
-                    // Conditional dashboard display
-                    switch viewModel.selectedDashboardType {
-                    case .regular:
-                        regularDashboardContent
-                    case .standard:
-                        StandardDashboardView(onNavigateToTab: onNavigateToTab)
-                    case .simplified:
-                        momDashboardContent
-                    }
+                    momDashboardContentScrollable
+                        .tag(DashboardType.simplified)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 24)
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .onChange(of: viewModel.selectedDashboardType) { _, newValue in
+                    HapticManager.shared.light()
+                    UserPreferences.preferredDashboard = newValue
+                    AppLogger.log("📱 Dashboard type changed to: \(newValue.displayName)", category: "dashboard")
+                }
             }
             .background(themeManager.perfolioTheme.primaryBackground.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -544,28 +551,53 @@ struct PerFolioDashboardView: View {
         }
     }
     
-    // MARK: - Dashboard Type Toggle
+    // MARK: - Dashboard Page Indicator
     
-    private var dashboardTypeToggle: some View {
-        HStack {
-            Spacer()
-            
-            Picker("Dashboard Type", selection: $viewModel.selectedDashboardType) {
-                ForEach(DashboardType.allCases, id: \.self) { type in
-                    Text(type.displayName).tag(type)
+    private var dashboardPageIndicator: some View {
+        HStack(spacing: 8) {
+            ForEach(DashboardType.allCases, id: \.self) { type in
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        viewModel.selectedDashboardType = type
+                    }
+                    HapticManager.shared.light()
+                } label: {
+                    VStack(spacing: 4) {
+                        Circle()
+                            .fill(viewModel.selectedDashboardType == type ? themeManager.perfolioTheme.tintColor : themeManager.perfolioTheme.textTertiary.opacity(0.3))
+                            .frame(width: 8, height: 8)
+                            .scaleEffect(viewModel.selectedDashboardType == type ? 1.3 : 1.0)
+                        
+                        Text(type.displayName)
+                            .font(.system(size: 11, weight: viewModel.selectedDashboardType == type ? .semibold : .regular))
+                            .foregroundStyle(viewModel.selectedDashboardType == type ? themeManager.perfolioTheme.textPrimary : themeManager.perfolioTheme.textTertiary)
+                    }
+                    .frame(width: 70)
                 }
             }
-            .pickerStyle(.segmented)
-            .frame(width: 280) // Increased to fit 3 options
-            .onChange(of: viewModel.selectedDashboardType) { _, newValue in
-                HapticManager.shared.light()
-                UserPreferences.preferredDashboard = newValue
-                AppLogger.log("📱 Dashboard type changed to: \(newValue.displayName)", category: "dashboard")
-            }
-            
-            Spacer()
         }
-        .padding(.vertical, 12)
+        .animation(.spring(response: 0.3), value: viewModel.selectedDashboardType)
+    }
+    
+    // MARK: - Scrollable Dashboard Content
+    
+    private var regularDashboardContentScrollable: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                regularDashboardContent
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
+        .background(themeManager.perfolioTheme.primaryBackground)
+    }
+    
+    private var standardDashboardContentScrollable: some View {
+        StandardDashboardView(onNavigateToTab: onNavigateToTab)
+    }
+    
+    private var momDashboardContentScrollable: some View {
+        momDashboardContent
     }
     
     // MARK: - Mom Dashboard Content
