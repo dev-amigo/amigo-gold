@@ -367,6 +367,36 @@ struct SettingsView: View {
     
     private var supportLegalSection: some View {
         Section {
+            // FAQ
+            NavigationLink {
+                FAQView()
+                    .environmentObject(themeManager)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "questionmark.circle.fill")
+                        .font(.system(size: 18))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        .symbolRenderingMode(.hierarchical)
+                        .frame(width: 28, alignment: .center)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("FAQ")
+                            .font(.system(size: 17, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        Text("Frequently asked questions")
+                            .font(.system(size: 13))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                }
+            }
+            .listRowBackground(themeManager.perfolioTheme.secondaryBackground)
+            
             // Email Support
             Button {
                 HapticManager.shared.light()
