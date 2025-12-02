@@ -413,7 +413,10 @@ class FluidVaultService: ObservableObject {
         )
     }
     
-    /// Send transaction using selected wallet provider (Privy or Alchemy AA)
+    /// Send transaction using selected method (Privy SDK or REST API)
+    /// Developer can choose between:
+    /// 1. Privy SDK: wallet.provider.request() - requires dashboard policies
+    /// 2. Privy REST API: sponsor: true - same as web
     private func sendTransaction(to: String, data: String, value: String) async throws -> String {
         AppLogger.log("📤 Preparing transaction to: \(to)", category: "fluid")
         
@@ -428,9 +431,10 @@ class FluidVaultService: ObservableObject {
         AppLogger.log("   Data: \(data.prefix(66))...", category: "fluid")
         AppLogger.log("   Value: \(value)", category: "fluid")
         
-        // Determine which wallet provider to use
-        let selectedProvider = WalletProvider.current
-        AppLogger.log("🔐 Using wallet provider: \(selectedProvider.displayName)", category: "fluid")
+        // Determine which method to use
+        let selectedMethod = WalletProvider.current
+        AppLogger.log("🔐 Using method: \(selectedMethod.displayName)", category: "fluid")
+        AppLogger.log("   Technical: \(selectedMethod.technicalDetails)", category: "fluid")
         
         // Build transaction request
         let txRequest = TransactionRequest(
@@ -443,23 +447,20 @@ class FluidVaultService: ObservableObject {
         do {
             let txHash: String
             
-            switch selectedProvider {
-            case .privyEmbedded:
-                // Use Privy embedded wallet (existing behavior)
-                AppLogger.log("📤 Routing to Privy embedded wallet...", category: "fluid")
-                txHash = try await sendPrivyTransaction(txRequest)
+            switch selectedMethod {
+            case .privySDK:
+                // Method 1: Privy SDK (wallet.provider.request)
+                AppLogger.log("📤 Sending via Privy SDK (wallet.provider.request)...", category: "fluid")
+                AppLogger.log("⚠️ This requires gas sponsorship policies in Privy Dashboard", category: "fluid")
+                txHash = try await sendSDKTransaction(request: txRequest)
                 
-            case .alchemyAA:
-                // Use Alchemy Account Abstraction (dev mode only)
-                #if DEBUG
-                guard UserPreferences.isDevModeEnabled else {
-                    throw FluidVaultError.transactionFailed("Alchemy AA requires dev mode to be enabled")
+            case .privyRestAPI:
+                // Method 2: Privy REST API (sponsor: true)
+                guard let walletId = UserDefaults.standard.string(forKey: "userWalletId") else {
+                    throw FluidVaultError.transactionFailed("Missing Privy wallet identifier")
                 }
-                AppLogger.log("✨ Routing to Alchemy AA (gas-sponsored)...", category: "fluid")
-                txHash = try await sendAlchemyAATransaction(txRequest)
-                #else
-                throw FluidVaultError.transactionFailed("Alchemy AA not available in production builds")
-                #endif
+                AppLogger.log("📤 Sending via Privy REST API (sponsor: true)...", category: "fluid")
+                txHash = try await sendSponsoredTransaction(request: txRequest, walletId: walletId)
             }
             
             AppLogger.log("✅ Transaction sent: \(txHash)", category: "fluid")
@@ -471,75 +472,51 @@ class FluidVaultService: ObservableObject {
         }
     }
     
-    /// Send transaction via Privy embedded wallet
-    private func sendPrivyTransaction(_ request: TransactionRequest) async throws -> String {
-        AppLogger.log("🔐 Attempting to sign transaction with Privy embedded wallet", category: "fluid")
-        
+    /// Send transaction via Privy SDK (wallet.provider.request)
+    /// This method requires gas sponsorship policies configured in Privy Dashboard
+    private func sendSDKTransaction(request: TransactionRequest) async throws -> String {
         // Get Privy auth coordinator
         let authCoordinator = PrivyAuthCoordinator.shared
-        
         let authState = await authCoordinator.resolvedAuthState()
         
-        AppLogger.log("🔍 Current AuthState type: \(type(of: authState))", category: "fluid")
-        AppLogger.log("🔍 AuthState description: \(authState)", category: "fluid")
-        
-        // Try to extract user from authState
-        // AuthState cases in Privy SDK:
-        // - .notReady
-        // - .unauthenticated
-        // - .authenticated(user: PrivyUser)
-        
         guard case .authenticated(let user) = authState else {
-            // Log the actual state for debugging
-            AppLogger.log("❌ User not authenticated. Current state: \(authState)", category: "fluid")
-            AppLogger.log("💡 Possible reasons:", category: "fluid")
-            AppLogger.log("   1. Session expired - user needs to log in again", category: "fluid")
-            AppLogger.log("   2. Auth state not persisted across app launches", category: "fluid")
-            AppLogger.log("   3. Transaction called before auth completed", category: "fluid")
-            throw FluidVaultError.transactionFailed("User not authenticated. Current state: \(authState)")
+            throw FluidVaultError.transactionFailed("User not authenticated")
         }
         
-        AppLogger.log("✅ User authenticated successfully", category: "fluid")
-        
-        // Get user's embedded Ethereum wallet
-        let embeddedWallets = user.embeddedEthereumWallets
-        
-        AppLogger.log("🔍 Found \(embeddedWallets.count) embedded wallets", category: "fluid")
-        
-        guard let wallet = embeddedWallets.first else {
+        guard let wallet = user.embeddedEthereumWallets.first else {
             throw FluidVaultError.transactionFailed("No embedded wallet found")
         }
         
-        AppLogger.log("📝 Preparing transaction for wallet: \(wallet.address)", category: "fluid")
-        AppLogger.log("   To: \(request.to)", category: "fluid")
-        AppLogger.log("   From: \(request.from)", category: "fluid")
-        AppLogger.log("   Data: \(request.data.prefix(66))...", category: "fluid")
-        AppLogger.log("   Value: \(request.value)", category: "fluid")
+        let chainId = await wallet.provider.chainId
+        
+        // Create unsigned transaction WITHOUT gas/gasPrice
+        // Privy will sponsor gas IF policies are configured in dashboard
+        let unsignedTx = PrivySDK.EthereumRpcRequest.UnsignedEthTransaction(
+            from: request.from,
+            to: request.to,
+            data: request.data,
+            value: makeHexQuantity(request.value),
+            chainId: .int(chainId)
+        )
+        
+        AppLogger.log("📤 Submitting via wallet.provider.request()...", category: "fluid")
+        AppLogger.log("   Chain ID: \(chainId)", category: "fluid")
+        
+        let rpcRequest = try PrivySDK.EthereumRpcRequest.ethSendTransaction(transaction: unsignedTx)
         
         do {
-            if environment.enablePrivySponsoredRPC {
-                AppLogger.log("📤 Attempting sponsored transaction via Privy RPC...", category: "fluid")
-                guard let walletId = UserDefaults.standard.string(forKey: "userWalletId") else {
-                    throw FluidVaultError.transactionFailed("Missing Privy wallet identifier")
-                }
-                let txHash = try await sendSponsoredTransaction(
-                    request: request,
-                    walletId: walletId
-                )
-                AppLogger.log("✅ Privy RPC submitted transaction: \(txHash)", category: "fluid")
-                return txHash
-            } else {
-                AppLogger.log("📤 Attempting to send transaction via embedded wallet provider...", category: "fluid")
-                let txHash = try await sendProviderTransaction(
-                    request: request,
-                    wallet: wallet
-                )
-                AppLogger.log("✅ Embedded wallet submitted transaction: \(txHash)", category: "fluid")
-                return txHash
-            }
+            let txHash = try await wallet.provider.request(rpcRequest)
+            AppLogger.log("✅ SDK transaction submitted: \(txHash)", category: "fluid")
+            return txHash
         } catch {
-            AppLogger.log("❌ Transaction signing failed: \(error)", category: "fluid")
-            throw FluidVaultError.transactionFailed("Signing failed: \(error.localizedDescription)")
+            AppLogger.log("❌ SDK transaction failed: \(error)", category: "fluid")
+            
+            if error.localizedDescription.contains("insufficient funds") {
+                AppLogger.log("🚨 INSUFFICIENT FUNDS - Gas sponsorship policy may not be configured!", category: "fluid")
+                AppLogger.log("🔧 Fix: Configure policy at Privy Dashboard or use REST API method", category: "fluid")
+            }
+            
+            throw error
         }
     }
     
@@ -551,98 +528,10 @@ class FluidVaultService: ObservableObject {
         let value: String
     }
     
-    /// Send transaction via Alchemy option (Currently uses Privy standard flow)
-    /// Only available in DEBUG builds with dev mode enabled
-    /// 
-    /// **Note:** True Alchemy AA with gas sponsorship requires their SDK.
-    /// For now, this uses the same Privy flow as the standard option.
-    /// This is primarily for testing/comparing different RPC providers.
-    private func sendAlchemyAATransaction(_ request: TransactionRequest) async throws -> String {
-        AppLogger.log("🌟 Alchemy option selected (using Privy standard flow)", category: "fluid")
-        AppLogger.log("💡 True AA with gas sponsorship requires Alchemy SDK integration", category: "fluid")
-        
-        // Get Privy user and wallet
-        let authCoordinator = PrivyAuthCoordinator.shared
-        let authState = await authCoordinator.resolvedAuthState()
-        
-        guard case .authenticated(let user) = authState else {
-            AppLogger.log("❌ User not authenticated", category: "fluid")
-            throw FluidVaultError.transactionFailed("User not authenticated")
-        }
-        
-        guard let wallet = user.embeddedEthereumWallets.first else {
-            throw FluidVaultError.transactionFailed("No embedded wallet found")
-        }
-        
-        // Use the standard Privy provider flow
-        // This DOES support gas sponsorship if Privy policies are configured
-        return try await sendProviderTransaction(request: request, wallet: wallet)
-    }
+    // MARK: - Privy REST API Transaction (sponsor: true)
     
-    private func sendProviderTransaction(
-        request: TransactionRequest,
-        wallet: any PrivySDK.EmbeddedEthereumWallet
-    ) async throws -> String {
-        AppLogger.log("🔑 Sending transaction via Privy embedded wallet with gas sponsorship", category: "fluid")
-        AppLogger.log("📝 Transaction details:", category: "fluid")
-        AppLogger.log("   From: \(request.from)", category: "fluid")
-        AppLogger.log("   To: \(request.to)", category: "fluid")
-        AppLogger.log("   Value: \(request.value)", category: "fluid")
-        AppLogger.log("   Data: \(request.data.prefix(66))...", category: "fluid")
-        AppLogger.log("💡 NOTE: Gas sponsorship requires policies configured in Privy Dashboard", category: "fluid")
-        AppLogger.log("💡 Policies must match: Chain (eip155:1), Contract (\(request.to)), Method", category: "fluid")
-        
-        let chainId = await wallet.provider.chainId
-        
-        // Create unsigned transaction WITHOUT gas/gasPrice
-        // When these are nil, Privy's infrastructure will:
-        // 1. Check if transaction matches sponsorship policies
-        // 2. If matched, Privy sponsors the gas
-        // 3. If not matched, user needs ETH for gas
-        let unsignedTx = PrivySDK.EthereumRpcRequest.UnsignedEthTransaction(
-            from: request.from,
-            to: request.to,
-            data: request.data,
-            value: makeHexQuantity(request.value),
-            chainId: .int(chainId)
-            // gas: nil - Let Privy estimate
-            // gasPrice: nil - Let Privy handle (will sponsor if policy matches)
-        )
-        
-        AppLogger.log("📤 Submitting transaction via wallet.provider.request()...", category: "fluid")
-        AppLogger.log("   Chain ID: \(chainId)", category: "fluid")
-        AppLogger.log("   Gas/GasPrice: nil (Privy will sponsor if policies match)", category: "fluid")
-        
-        let rpcRequest = try PrivySDK.EthereumRpcRequest.ethSendTransaction(transaction: unsignedTx)
-        
-        do {
-            let txHash = try await wallet.provider.request(rpcRequest)
-            AppLogger.log("✅ Transaction submitted successfully: \(txHash)", category: "fluid")
-            AppLogger.log("💰 Gas was sponsored by Privy (no ETH deducted from user)", category: "fluid")
-            return txHash
-        } catch {
-            AppLogger.log("❌ Transaction failed: \(error)", category: "fluid")
-            
-            // Enhanced error message for gas sponsorship issues
-            let errorMessage = error.localizedDescription
-            if errorMessage.contains("insufficient funds") {
-                AppLogger.log("🚨 INSUFFICIENT FUNDS ERROR - Possible causes:", category: "fluid")
-                AppLogger.log("   1. Gas sponsorship policy not configured in Privy Dashboard", category: "fluid")
-                AppLogger.log("   2. Transaction doesn't match policy criteria:", category: "fluid")
-                AppLogger.log("      • Chain must be: eip155:1 (Ethereum mainnet)", category: "fluid")
-                AppLogger.log("      • Contract must be whitelisted: \(request.to)", category: "fluid")
-                AppLogger.log("      • Method signature must be whitelisted", category: "fluid")
-                AppLogger.log("   3. Daily spending limit exceeded", category: "fluid")
-                AppLogger.log("   4. Policy is disabled or expired", category: "fluid")
-                AppLogger.log("", category: "fluid")
-                AppLogger.log("🔧 Fix: Configure gas sponsorship policy at:", category: "fluid")
-                AppLogger.log("   https://dashboard.privy.io/apps/\(environment.privyAppID)/policies", category: "fluid")
-            }
-            
-            throw error
-        }
-    }
-    
+    /// Send transaction via Privy REST API with sponsor: true
+    /// This is the ONLY transaction method - same approach as web's useSendTransaction with { sponsor: true }
     private func sendSponsoredTransaction(
         request: TransactionRequest,
         walletId: String

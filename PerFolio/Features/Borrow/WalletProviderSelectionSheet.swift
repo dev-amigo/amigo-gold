@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Sheet for selecting wallet provider before executing borrow transaction
-/// Only shown in DEBUG builds when dev mode is enabled
+/// Sheet for selecting transaction method before executing borrow transaction
+/// Allows developer to choose between Privy SDK and Privy REST API
 struct WalletProviderSelectionSheet: View {
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.dismiss) private var dismiss
@@ -16,16 +16,16 @@ struct WalletProviderSelectionSheet: View {
                     // Header
                     headerSection
                     
-                    // Provider Options
+                    // Method Options
                     VStack(spacing: 12) {
                         ForEach(WalletProvider.allCases.filter { $0.isAvailable }) { provider in
-                            providerCard(provider)
+                            methodCard(provider)
                         }
                     }
                     .padding(.horizontal)
                     
-                    // Warning Banner
-                    warningBanner
+                    // Info Banner
+                    infoBanner
                     
                     // Proceed Button
                     proceedButton
@@ -33,7 +33,7 @@ struct WalletProviderSelectionSheet: View {
                 .padding(.vertical, 24)
             }
             .background(themeManager.perfolioTheme.primaryBackground)
-            .navigationTitle("Select Wallet Provider")
+            .navigationTitle("Select Transaction Method")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -55,7 +55,7 @@ struct WalletProviderSelectionSheet: View {
     
     private var headerSection: some View {
         VStack(spacing: 12) {
-            Image(systemName: "wallet.pass.fill")
+            Image(systemName: "arrow.triangle.branch")
                 .font(.system(size: 48))
                 .foregroundStyle(themeManager.perfolioTheme.tintColor)
                 .symbolRenderingMode(.hierarchical)
@@ -64,7 +64,7 @@ struct WalletProviderSelectionSheet: View {
                 .font(.system(size: 20, weight: .bold, design: .rounded))
                 .foregroundStyle(themeManager.perfolioTheme.textPrimary)
             
-            Text("Select which wallet provider to use for signing this transaction")
+            Text("Select how to send your transaction to the blockchain")
                 .font(.system(size: 15))
                 .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                 .multilineTextAlignment(.center)
@@ -72,9 +72,9 @@ struct WalletProviderSelectionSheet: View {
         }
     }
     
-    // MARK: - Provider Card
+    // MARK: - Method Card
     
-    private func providerCard(_ provider: WalletProvider) -> some View {
+    private func methodCard(_ provider: WalletProvider) -> some View {
         Button {
             HapticManager.shared.medium()
             selectedProvider = provider
@@ -101,12 +101,12 @@ struct WalletProviderSelectionSheet: View {
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 3)
                                     .background(
-                                        provider == .privyEmbedded 
+                                        provider == .privyRestAPI 
                                             ? themeManager.perfolioTheme.success.opacity(0.2)
                                             : Color.orange.opacity(0.2)
                                     )
                                     .foregroundStyle(
-                                        provider == .privyEmbedded
+                                        provider == .privyRestAPI
                                             ? themeManager.perfolioTheme.success
                                             : Color.orange
                                     )
@@ -130,26 +130,30 @@ struct WalletProviderSelectionSheet: View {
                 }
                 .padding(16)
                 
-                // Provider-specific note
+                // Technical details
                 Divider()
                     .background(themeManager.perfolioTheme.border)
                 
                 HStack(spacing: 8) {
-                    Image(systemName: provider == .privyEmbedded ? "checkmark.shield.fill" : "exclamationmark.triangle.fill")
+                    Image(systemName: "chevron.left.forwardslash.chevron.right")
                         .font(.system(size: 14))
-                        .foregroundStyle(provider == .privyEmbedded ? themeManager.perfolioTheme.success : Color.orange)
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     
-                    Text(provider == .privyEmbedded 
-                        ? "Recommended for production use" 
-                        : "For testing only - requires ETH for gas")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(provider == .privyEmbedded ? themeManager.perfolioTheme.success : Color.orange)
+                    Text(provider.technicalDetails)
+                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     
                     Spacer()
+                    
+                    if provider == .privyRestAPI {
+                        Text("✓ Web Parity")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(themeManager.perfolioTheme.success)
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .background((provider == .privyEmbedded ? themeManager.perfolioTheme.success : Color.orange).opacity(0.1))
+                .background(themeManager.perfolioTheme.secondaryBackground.opacity(0.5))
             }
             .background(themeManager.perfolioTheme.secondaryBackground)
             .cornerRadius(16)
@@ -161,28 +165,42 @@ struct WalletProviderSelectionSheet: View {
         .buttonStyle(.plain)
     }
     
-    // MARK: - Warning Banner
+    // MARK: - Info Banner
     
-    private var warningBanner: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 20))
-                .foregroundStyle(.orange)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Developer Mode")
+    private var infoBanner: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                
+                Text("Developer Testing")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                
-                Text("These options are for testing only and not available in production builds.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
             }
             
-            Spacer()
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(Color.orange)
+                        .frame(width: 6, height: 6)
+                    Text("Privy SDK: Requires policies in Privy Dashboard")
+                        .font(.system(size: 12))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+                
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(themeManager.perfolioTheme.success)
+                        .frame(width: 6, height: 6)
+                    Text("Privy REST API: Uses sponsor: true (same as web)")
+                        .font(.system(size: 12))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                }
+            }
         }
         .padding(16)
-        .background(Color.orange.opacity(0.1))
+        .background(themeManager.perfolioTheme.tintColor.opacity(0.1))
         .cornerRadius(12)
         .padding(.horizontal)
     }
@@ -219,7 +237,7 @@ struct WalletProviderSelectionSheet: View {
 #if DEBUG
 #Preview {
     WalletProviderSelectionSheet(
-        selectedProvider: .constant(.privyEmbedded),
+        selectedProvider: .constant(.privyRestAPI),
         onProceed: {}
     )
     .environmentObject(ThemeManager())

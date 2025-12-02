@@ -1,88 +1,99 @@
 import Foundation
 
-/// Wallet providers for signing blockchain transactions
+/// Wallet provider/method for signing blockchain transactions
 /// 
-/// Supports multiple wallet options:
-/// - Privy: Standard embedded wallet (production ready)
-/// - Alchemy: Alternative RPC provider for testing (dev mode only)
+/// **Two Transaction Methods Available (for developer testing):**
 /// 
-/// **Note:** Both options currently use Privy's embedded wallet for signing.
-/// True Alchemy AA with gas sponsorship requires their SDK (future enhancement).
+/// 1. **Privy SDK** (`wallet.provider.request()`)
+///    - Uses Privy iOS SDK's embedded wallet provider
+///    - Gas sponsorship requires policies configured in Privy Dashboard
+///    - May fail with "insufficient funds" if no policies match
+/// 
+/// 2. **Privy REST API** (`sponsor: true`)
+///    - POST /v1/wallets/{wallet_id}/rpc with sponsor: true
+///    - Same approach as web's useSendTransaction({ sponsor: true })
+///    - Explicitly requests gas sponsorship in the API call
+/// 
 enum WalletProvider: String, CaseIterable, Identifiable {
-    case privyEmbedded = "privy"
-    case alchemyAA = "alchemy"
+    case privySDK = "privy_sdk"      // SDK method: wallet.provider.request()
+    case privyRestAPI = "privy_api"  // REST API method: sponsor: true
     
     var id: String { rawValue }
     
     /// Human-readable display name
     var displayName: String {
         switch self {
-        case .privyEmbedded:
-            return "Privy Embedded Wallet"
-        case .alchemyAA:
-            return "Alchemy RPC (Testing)"
+        case .privySDK:
+            return "Privy SDK"
+        case .privyRestAPI:
+            return "Privy REST API"
         }
     }
     
     /// Short description of the provider
     var description: String {
         switch self {
-        case .privyEmbedded:
-            return "Production-ready embedded wallet"
-        case .alchemyAA:
-            return "Alternative RPC for testing (requires user ETH for gas)"
+        case .privySDK:
+            return "Uses wallet.provider.request() - requires dashboard policies"
+        case .privyRestAPI:
+            return "Uses REST API with sponsor: true (same as web)"
         }
     }
     
     /// SF Symbol icon for UI
     var icon: String {
         switch self {
-        case .privyEmbedded:
-            return "lock.shield.fill"
-        case .alchemyAA:
+        case .privySDK:
+            return "iphone"
+        case .privyRestAPI:
             return "network"
         }
     }
     
     /// Whether this provider supports gas sponsorship
-    /// Note: Both use Privy, so gas sponsorship depends on Privy policy configuration
     var supportsGasSponsorship: Bool {
         switch self {
-        case .privyEmbedded:
-            return true  // Via Privy policies
-        case .alchemyAA:
-            return true  // Via Privy policies (same as standard)
+        case .privySDK:
+            return true  // Via Privy dashboard policies
+        case .privyRestAPI:
+            return true  // Via sponsor: true flag
         }
     }
     
     /// Whether this provider is available in current build
     var isAvailable: Bool {
         switch self {
-        case .privyEmbedded:
+        case .privySDK:
             return true  // Always available
-        case .alchemyAA:
-            #if DEBUG
-            return true  // Only available in debug builds
-            #else
-            return false
-            #endif
+        case .privyRestAPI:
+            return true  // Always available
         }
     }
     
-    /// Badge text (e.g., "Production", "Testing")
+    /// Badge text
     var badge: String? {
         switch self {
-        case .privyEmbedded:
-            return "Production"
-        case .alchemyAA:
-            return "Testing"
+        case .privySDK:
+            return "Requires Policies"
+        case .privyRestAPI:
+            return "Same as Web"
+        }
+    }
+    
+    /// Technical details for developers
+    var technicalDetails: String {
+        switch self {
+        case .privySDK:
+            return "wallet.provider.request(ethSendTransaction)"
+        case .privyRestAPI:
+            return "POST /v1/wallets/{id}/rpc { sponsor: true }"
         }
     }
     
     /// Get current selected provider from preferences
     static var current: WalletProvider {
         let rawValue = UserPreferences.selectedWalletProvider
-        return WalletProvider(rawValue: rawValue) ?? .privyEmbedded
+        return WalletProvider(rawValue: rawValue) ?? .privyRestAPI  // Default to REST API
     }
     
     /// Save provider to preferences

@@ -30,11 +30,10 @@ final class BorrowViewModel: ObservableObject {
     @Published var showingTransactionModal = false
     @Published var showingAPYChart = false
     
-    #if DEBUG
+    // Wallet provider/method selection (for developer testing)
     @Published var showingWalletProviderSelection = false
     @Published var selectedWalletProvider: WalletProvider = .current
     private var hasSelectedProvider = false
-    #endif
     
     enum ViewState {
         case loading
@@ -224,24 +223,21 @@ final class BorrowViewModel: ObservableObject {
     
     // MARK: - Execute Borrow
     
-    #if DEBUG
-    /// Mark that user has selected a wallet provider
+    /// Mark that user has selected a wallet provider/method
     func markProviderSelected() {
         hasSelectedProvider = true
-        AppLogger.log("✅ Wallet provider selected: \(selectedWalletProvider.displayName)", category: "borrow")
+        selectedWalletProvider.select()  // Save to preferences
+        AppLogger.log("✅ Transaction method selected: \(selectedWalletProvider.displayName)", category: "borrow")
+        AppLogger.log("   Technical: \(selectedWalletProvider.technicalDetails)", category: "borrow")
     }
-    #endif
     
     func executeBorrow() async {
-        // STEP 1: Check if dev mode is enabled - show wallet provider selection
-        #if DEBUG
-        if UserPreferences.isDevModeEnabled && !hasSelectedProvider {
-            // Show provider selection sheet first
-            AppLogger.log("🔧 Dev mode active - showing wallet provider selection", category: "borrow")
+        // STEP 1: Show method selection if not already selected
+        if !hasSelectedProvider {
+            AppLogger.log("🔧 Showing transaction method selection", category: "borrow")
             showingWalletProviderSelection = true
             return
         }
-        #endif
         
         // STEP 2: Validate inputs
         guard validationError == nil else {
@@ -257,14 +253,10 @@ final class BorrowViewModel: ObservableObject {
             return
         }
         
-        // Log selected provider
-        #if DEBUG
-        let provider = WalletProvider.current
-        AppLogger.log("🔐 Executing borrow with: \(provider.displayName)", category: "borrow")
-        if provider.supportsGasSponsorship {
-            AppLogger.log("✨ Gas sponsorship: ENABLED", category: "borrow")
-        }
-        #endif
+        // Log selected method
+        let method = WalletProvider.current
+        AppLogger.log("🔐 Executing borrow with: \(method.displayName)", category: "borrow")
+        AppLogger.log("   Technical: \(method.technicalDetails)", category: "borrow")
         
         showingTransactionModal = true
         
@@ -312,9 +304,7 @@ final class BorrowViewModel: ObservableObject {
     func resetTransaction() {
         transactionState = .idle
         showingTransactionModal = false
-        #if DEBUG
         hasSelectedProvider = false  // Reset for next borrow
-        #endif
     }
     
     // MARK: - Helpers

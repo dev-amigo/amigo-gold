@@ -346,15 +346,15 @@ struct SettingsView: View {
                     .font(.system(size: 13))
                     .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                 
-                Text("• Alchemy AA wallet for gas-sponsored transactions")
+                Text("• Verbose logging for transaction debugging")
                     .font(.system(size: 12))
                     .foregroundStyle(themeManager.perfolioTheme.textTertiary)
                 
-                Text("• Alternative transaction signing methods")
+                Text("• All transactions use Privy REST API with gas sponsorship")
                     .font(.system(size: 12))
                     .foregroundStyle(themeManager.perfolioTheme.textTertiary)
                 
-                Text("⚠️ For testing purposes only. Not available in production builds.")
+                Text("⚠️ For development/testing purposes only.")
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.orange)
                     .padding(.top, 4)

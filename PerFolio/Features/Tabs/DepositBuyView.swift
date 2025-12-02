@@ -665,8 +665,8 @@ struct DepositBuyView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("From")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                         Spacer()
                         Text("Available: \(viewModel.formattedFromBalance) \(viewModel.fromToken.symbol)")
                             .font(.system(size: 12, weight: .medium, design: .rounded))
@@ -675,9 +675,9 @@ struct DepositBuyView: View {
                     
                     HStack(spacing: 12) {
                         TextField("0.00", text: $viewModel.swapAmount)
-                            .keyboardType(.decimalPad)
+                        .keyboardType(.decimalPad)
                             .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                             .onChange(of: viewModel.swapAmount) { newValue in
                                 // Also update legacy usdcAmount for compatibility
                                 if viewModel.fromToken.symbol == "USDC" {
@@ -696,8 +696,8 @@ struct DepositBuyView: View {
                         .background(themeManager.perfolioTheme.tintColor.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
-                    .padding(14)
-                    .background(themeManager.perfolioTheme.primaryBackground)
+                        .padding(14)
+                        .background(themeManager.perfolioTheme.primaryBackground)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     
                     // Quick presets (like web)
@@ -711,15 +711,15 @@ struct DepositBuyView: View {
                 }
                 
                 // Swap direction toggle (like web)
-                HStack {
-                    Spacer()
+                        HStack {
+                            Spacer()
                     Button {
                         HapticManager.shared.light()
                         viewModel.handleSwapTokens()
                     } label: {
                         Image(systemName: "arrow.up.arrow.down")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                                .foregroundStyle(themeManager.perfolioTheme.tintColor)
                             .frame(width: 40, height: 40)
                             .background(themeManager.perfolioTheme.tintColor.opacity(0.1))
                             .clipShape(Circle())
@@ -736,12 +736,12 @@ struct DepositBuyView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("To (estimated)")
                         .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                     
                     HStack(spacing: 12) {
                         Text(viewModel.swapQuote != nil ? viewModel.estimatedOutput : "0.00")
                             .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
                         
                         Spacer()
                         
@@ -817,9 +817,9 @@ struct DepositBuyView: View {
     private func balanceItem(symbol: String, balance: String, valueInCurrency: String? = nil, isFromToken: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(symbol)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+            Text(symbol)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
                 if isFromToken {
                     Text("(From)")
                         .font(.system(size: 10, weight: .medium, design: .rounded))

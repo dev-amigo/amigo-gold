@@ -1,10 +1,11 @@
 import Foundation
 import PrivySDK
 import Combine
+import CryptoKit
 
 /// DEX swap service for bi-directional USDC ↔ PAXG conversion
 /// Uses 0x Aggregator for quotes and transaction data
-/// Executes swaps via Privy SDK with gas sponsorship
+/// Executes swaps via Privy REST API with gas sponsorship (sponsor: true)
 /// Aligned with Web implementation: retry logic, receipt polling, transaction recovery
 final class DEXSwapService: ObservableObject {
     
@@ -421,17 +422,17 @@ final class DEXSwapService: ObservableObject {
         }
         
         do {
-            // Send transaction via Privy
-            let txHash = try await sendPrivyTransaction(
-                to: tokenAddress,
-                data: approvalData,
-                value: "0x0",
-                from: userAddress
-            )
-            
+        // Send transaction via Privy
+        let txHash = try await sendPrivyTransaction(
+            to: tokenAddress,
+            data: approvalData,
+            value: "0x0",
+            from: userAddress
+        )
+        
             lastTxHash = txHash
-            AppLogger.log("✅ Token approval sent: \(txHash)", category: "dex")
-            
+        AppLogger.log("✅ Token approval sent: \(txHash)", category: "dex")
+        
             // Wait for confirmation with receipt polling (aligned with web)
             let result = try await waitForTransactionWithPolling(txHash)
             
@@ -445,8 +446,8 @@ final class DEXSwapService: ObservableObject {
                     spenderAddress: spenderAddress,
                     requiredAmount: amount
                 )
-                
-                approvalState = .approved
+        
+        approvalState = .approved
                 transactionStatus = .idle
             } else if result.possibleSuccess {
                 AppLogger.log("⚠️ Approval may have succeeded, assuming approved", category: "dex")
@@ -540,23 +541,23 @@ final class DEXSwapService: ObservableObject {
         AppLogger.log("   Value: \(quoteResponse.value)", category: "dex")
         
         do {
-            // Send transaction via Privy using 0x quote data
-            let txHash = try await sendPrivyTransaction(
-                to: quoteResponse.to,
-                data: quoteResponse.data,
-                value: quoteResponse.value,
-                from: params.fromAddress
-            )
-            
+        // Send transaction via Privy using 0x quote data
+        let txHash = try await sendPrivyTransaction(
+            to: quoteResponse.to,
+            data: quoteResponse.data,
+            value: quoteResponse.value,
+            from: params.fromAddress
+        )
+        
             lastTxHash = txHash
-            AppLogger.log("✅ Swap transaction sent: \(txHash)", category: "dex")
-            
+        AppLogger.log("✅ Swap transaction sent: \(txHash)", category: "dex")
+        
             // Wait for confirmation with polling (aligned with web)
             let result = try await waitForTransactionWithPolling(txHash)
-            
+        
             if result.success {
                 transactionStatus = .success
-                AppLogger.log("✅ Swap confirmed: \(txHash)", category: "dex")
+        AppLogger.log("✅ Swap confirmed: \(txHash)", category: "dex")
                 return txHash
             } else if result.possibleSuccess {
                 // Transaction may have succeeded - return hash anyway (aligned with web)
@@ -607,96 +608,208 @@ final class DEXSwapService: ObservableObject {
         lastTxHash = nil
     }
     
-    // MARK: - Privy Transaction Methods
+    // MARK: - Privy Transaction Methods (REST API with sponsor: true)
     
-    /// Send transaction via Privy SDK with gas sponsorship
+    /// Environment configuration for Privy credentials
+    private var environment: EnvironmentConfiguration { .current }
+    
+    /// Send transaction via Privy REST API with gas sponsorship (sponsor: true)
+    /// This is the same approach as web's useSendTransaction with { sponsor: true }
     private func sendPrivyTransaction(
         to: String,
         data: String,
         value: String,
         from: String
     ) async throws -> String {
-        AppLogger.log("🔐 Attempting to sign transaction with Privy embedded wallet", category: "dex")
+        AppLogger.log("🔐 Attempting to send transaction via Privy REST API with sponsor: true", category: "dex")
         
-        // Get Privy auth coordinator
-        let authCoordinator = PrivyAuthCoordinator.shared
-        let authState = await authCoordinator.resolvedAuthState()
-        
-        // Get user from authState
-        guard case .authenticated(let user) = authState else {
-            AppLogger.log("❌ User not authenticated. Current state: \(authState)", category: "dex")
-            throw SwapError.networkError("User not authenticated")
+        // Get wallet ID from storage (required for REST API)
+        guard let walletId = UserDefaults.standard.string(forKey: "userWalletId") else {
+            AppLogger.log("❌ Missing Privy wallet ID", category: "dex")
+            throw SwapError.networkError("Missing Privy wallet identifier. Please log out and log back in.")
         }
         
-        AppLogger.log("✅ User authenticated successfully", category: "dex")
-        
-        // Get user's embedded Ethereum wallet
-        let embeddedWallets = user.embeddedEthereumWallets
-        
-        AppLogger.log("🔍 Found \(embeddedWallets.count) embedded wallets", category: "dex")
-        
-        guard let wallet = embeddedWallets.first else {
-            throw SwapError.networkError("No embedded wallet found")
-        }
-        
-        AppLogger.log("📝 Preparing transaction for wallet: \(wallet.address)", category: "dex")
+        AppLogger.log("📝 Preparing sponsored transaction:", category: "dex")
+        AppLogger.log("   Wallet ID: \(walletId.prefix(20))...", category: "dex")
         AppLogger.log("   To: \(to)", category: "dex")
         AppLogger.log("   From: \(from)", category: "dex")
         AppLogger.log("   Data: \(data.prefix(66))...", category: "dex")
         AppLogger.log("   Value: \(value)", category: "dex")
         
-        // Send transaction via embedded wallet provider
-        AppLogger.log("🔑 Sending transaction via Privy embedded wallet with gas sponsorship", category: "dex")
-        
-        let chainId = await wallet.provider.chainId
-        
-        // Create unsigned transaction WITHOUT gas/gasPrice for sponsorship
-        // When these are nil, Privy's infrastructure will:
-        // 1. Check if transaction matches sponsorship policies
-        // 2. If matched, Privy sponsors the gas
-        // 3. If not matched, user needs ETH for gas
-        let unsignedTx = PrivySDK.EthereumRpcRequest.UnsignedEthTransaction(
-            from: from,
-            to: to,
-            data: data,
-            value: makeHexQuantity(value),
-            chainId: .int(chainId)
-            // gas: nil - Let Privy estimate (omitted)
-            // gasPrice: nil - Let Privy handle (will sponsor if policy matches) (omitted)
-        )
-        
-        AppLogger.log("📤 Submitting transaction via wallet.provider.request()...", category: "dex")
-        AppLogger.log("   Chain ID: \(chainId)", category: "dex")
-        AppLogger.log("   Gas/GasPrice: nil (Privy will sponsor if policies match)", category: "dex")
-        
-        let rpcRequest = try PrivySDK.EthereumRpcRequest.ethSendTransaction(transaction: unsignedTx)
-        
+        // Send via REST API with sponsor: true
         do {
-            let txHash = try await wallet.provider.request(rpcRequest)
-            AppLogger.log("✅ Transaction submitted: \(txHash)", category: "dex")
-            AppLogger.log("💰 Gas was sponsored by Privy (no ETH deducted from user)", category: "dex")
+            let txHash = try await sendSponsoredTransaction(
+                to: to,
+                from: from,
+                data: data,
+                value: value,
+                walletId: walletId
+            )
+            AppLogger.log("✅ Sponsored transaction submitted: \(txHash)", category: "dex")
+            AppLogger.log("💰 Gas sponsored via Privy REST API (sponsor: true)", category: "dex")
             return txHash
         } catch {
-            AppLogger.log("❌ Transaction failed: \(error)", category: "dex")
-            
-            // Enhanced error message for gas sponsorship issues
-            let errorMessage = error.localizedDescription
-            if errorMessage.contains("insufficient funds") {
-                AppLogger.log("🚨 INSUFFICIENT FUNDS ERROR - Possible causes:", category: "dex")
-                AppLogger.log("   1. Gas sponsorship policy not configured in Privy Dashboard", category: "dex")
-                AppLogger.log("   2. Transaction doesn't match policy criteria:", category: "dex")
-                AppLogger.log("      • Chain must be: eip155:1 (Ethereum mainnet)", category: "dex")
-                AppLogger.log("      • Contract must be whitelisted: \(to)", category: "dex")
-                AppLogger.log("      • Method signature must be whitelisted", category: "dex")
-                AppLogger.log("   3. Daily spending limit exceeded", category: "dex")
-                AppLogger.log("   4. Policy is disabled or expired", category: "dex")
-                AppLogger.log("", category: "dex")
-                AppLogger.log("🔧 Fix: Configure gas sponsorship policy at:", category: "dex")
-                AppLogger.log("   https://dashboard.privy.io/apps/cmhenc7hj004ijy0c311hbf2z/policies", category: "dex")
-            }
-            
+            AppLogger.log("❌ Sponsored transaction failed: \(error)", category: "dex")
             throw SwapError.networkError("Transaction failed: \(error.localizedDescription)")
         }
+    }
+    
+    /// Send transaction via Privy REST API with sponsor: true
+    /// Matches web implementation: POST /v1/wallets/{wallet_id}/rpc with sponsor: true
+    private func sendSponsoredTransaction(
+        to: String,
+        from: String,
+        data: String,
+        value: String,
+        walletId: String
+    ) async throws -> String {
+        // Validate Privy credentials
+        guard !environment.privyAppID.isEmpty,
+              !environment.privyAppSecret.isEmpty else {
+            throw SwapError.networkError("Privy credentials missing. App ID or Secret not configured.")
+        }
+        
+        // Request/Response types
+        struct PrivyRPCRequest: Encodable {
+            struct Params: Encodable {
+                struct Transaction: Encodable {
+                    let from: String
+                    let to: String
+                    let data: String
+                    let value: String
+                }
+                let transaction: Transaction
+            }
+            let method: String
+            let caip2: String
+            let sponsor: Bool
+            let params: Params
+        }
+        
+        struct PrivyRPCResponse: Decodable {
+            struct RPCError: Decodable {
+                let code: Int?
+                let message: String?
+                let data: String?
+            }
+            let result: String?
+            let error: RPCError?
+        }
+        
+        // Build endpoint URL
+        let endpointString = "https://api.privy.io/v1/wallets/\(walletId)/rpc"
+        guard let endpoint = URL(string: endpointString) else {
+            throw SwapError.networkError("Invalid Privy RPC URL")
+        }
+        
+        // Ensure value has 0x prefix
+        let formattedValue = value.lowercased().hasPrefix("0x") ? value : "0x\(value)"
+        
+        // Build request payload with sponsor: true (KEY DIFFERENCE from SDK)
+        let payload = PrivyRPCRequest(
+            method: "eth_sendTransaction",
+            caip2: "eip155:1",  // Ethereum mainnet
+            sponsor: true,      // 🎯 GAS SPONSORSHIP FLAG - Same as web!
+            params: .init(
+                transaction: .init(
+                    from: from,
+                    to: to,
+                    data: data,
+                    value: formattedValue
+                )
+            )
+        )
+        
+        AppLogger.log("📤 Privy REST API Request:", category: "dex")
+        AppLogger.log("   Endpoint: \(endpointString)", category: "dex")
+        AppLogger.log("   Method: eth_sendTransaction", category: "dex")
+        AppLogger.log("   Chain: eip155:1 (Ethereum mainnet)", category: "dex")
+        AppLogger.log("   Sponsor: true ✅", category: "dex")
+        
+        // Encode payload
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let body = try encoder.encode(payload)
+        
+        // Build HTTP request
+        var urlRequest = URLRequest(url: endpoint)
+        urlRequest.httpMethod = "POST"
+        urlRequest.httpBody = body
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.setValue(environment.privyAppID, forHTTPHeaderField: "privy-app-id")
+        
+        // Add authorization signature (HMAC-SHA256)
+        if let signatureHeader = makePrivySignature(
+            appSecret: environment.privyAppSecret,
+            method: "POST",
+            path: "/v1/wallets/\(walletId)/rpc",
+            body: body
+        ) {
+            urlRequest.setValue(signatureHeader.signature, forHTTPHeaderField: "privy-authorization-signature")
+            urlRequest.setValue(signatureHeader.timestamp, forHTTPHeaderField: "privy-request-timestamp")
+        }
+        
+        // Add Basic Auth header
+        let credentials = "\(environment.privyAppID):\(environment.privyAppSecret)"
+        if let credentialData = credentials.data(using: .utf8) {
+            let basicToken = credentialData.base64EncodedString()
+            urlRequest.setValue("Basic \(basicToken)", forHTTPHeaderField: "Authorization")
+        }
+        
+        // Execute request
+        let (data, response) = try await URLSession.shared.data(for: urlRequest)
+        
+        // Validate response
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw SwapError.networkError("Invalid response from Privy API")
+        }
+        
+        // Log response for debugging
+        if let responseString = String(data: data, encoding: .utf8) {
+            AppLogger.log("📥 Privy API Response (\(httpResponse.statusCode)): \(responseString.prefix(500))", category: "dex")
+        }
+        
+        guard (200...299).contains(httpResponse.statusCode) else {
+            let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+            AppLogger.log("❌ Privy API error (\(httpResponse.statusCode)): \(message)", category: "dex")
+            throw SwapError.networkError("Privy API failed (\(httpResponse.statusCode)): \(message)")
+        }
+        
+        // Parse response
+        let rpcResponse = try JSONDecoder().decode(PrivyRPCResponse.self, from: data)
+        
+        if let error = rpcResponse.error {
+            let message = error.message ?? "Unknown RPC error"
+            AppLogger.log("❌ Privy RPC error: \(message)", category: "dex")
+            throw SwapError.networkError("Privy RPC error: \(message)")
+        }
+        
+        guard let txHash = rpcResponse.result else {
+            throw SwapError.networkError("No transaction hash returned from Privy API")
+        }
+        
+        return txHash
+    }
+    
+    /// Generate Privy authorization signature (HMAC-SHA256)
+    /// Required for REST API authentication
+    private func makePrivySignature(
+        appSecret: String,
+        method: String,
+        path: String,
+        body: Data
+    ) -> (timestamp: String, signature: String)? {
+        guard !appSecret.isEmpty else { return nil }
+        
+        let timestamp = String(Int(Date().timeIntervalSince1970))
+        let bodyString = String(data: body, encoding: .utf8) ?? ""
+        let message = "\(timestamp):\(method.uppercased()):\(path):\(bodyString)"
+        
+        let key = SymmetricKey(data: Data(appSecret.utf8))
+        let signatureData = HMAC<SHA256>.authenticationCode(for: Data(message.utf8), using: key)
+        let encodedSignature = Data(signatureData).base64EncodedString()
+        
+        return (timestamp, encodedSignature)
     }
     
     /// Wait for transaction confirmation with receipt polling (aligned with web)

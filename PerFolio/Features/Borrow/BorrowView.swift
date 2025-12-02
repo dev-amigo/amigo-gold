@@ -32,14 +32,13 @@ struct BorrowView: View {
         .sheet(isPresented: $viewModel.showingAPYChart) {
             APYChartView()
         }
-        #if DEBUG
         .sheet(isPresented: $viewModel.showingWalletProviderSelection) {
             WalletProviderSelectionSheet(
                 selectedProvider: $viewModel.selectedWalletProvider,
                 onProceed: {
-                    // Mark that provider has been selected, then continue with borrow
+                    // Mark that method has been selected, then continue with borrow
                     viewModel.markProviderSelected()
-                    // Continue with borrow execution after provider selection
+                    // Continue with borrow execution after method selection
                     Task {
                         await viewModel.executeBorrow()
                     }
@@ -47,7 +46,6 @@ struct BorrowView: View {
             )
             .environmentObject(themeManager)
         }
-        #endif
     }
     
     // MARK: - Loading State
