@@ -214,6 +214,20 @@ actor Web3Client {
         return blockNumber
     }
     
+    /// Get transaction receipt by hash
+    /// Returns nil if transaction is pending (not yet mined)
+    func getTransactionReceipt(txHash: String) async throws -> Any? {
+        let result = try await call(method: "eth_getTransactionReceipt", params: [txHash])
+        
+        // If result is NSNull or null, transaction is not yet mined
+        if result is NSNull {
+            return nil
+        }
+        
+        // Return the dictionary result
+        return result
+    }
+    
     private func makeRPCCall(to rpcURL: String, method: String, params: [Any]) async throws -> Any {
         guard let url = URL(string: rpcURL) else {
             throw Web3Error.invalidURL

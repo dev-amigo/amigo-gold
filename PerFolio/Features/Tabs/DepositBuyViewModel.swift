@@ -79,14 +79,18 @@ final class DepositBuyViewModel: ObservableObject {
     // Quote display in user's currency
     @Published var quoteInUserCurrency: QuoteInUserCurrency?
     
-    // Swap-related
-    @Published var usdcAmount: String = ""
+    // Swap-related (aligned with web: bi-directional support)
+    @Published var fromToken: DEXSwapService.Token = .usdc  // Default: USDC → PAXG
+    @Published var toToken: DEXSwapService.Token = .paxg
+    @Published var swapAmount: String = ""  // Amount to swap (from token)
+    @Published var usdcAmount: String = ""  // Legacy: kept for backward compatibility
     @Published var swapState: SwapState = .idle
     @Published var swapQuote: DEXSwapService.SwapQuote?
     @Published var slippageTolerance: Decimal = 0.5 // 0.5%
     @Published var goldPrice: Decimal = 0
     @Published var usdcBalance: Decimal = 0
     @Published var paxgBalance: Decimal = 0
+    @Published var lastSwapTxHash: String?  // Track last swap tx hash (like web)
     
     // Safari view
     @Published var showingSafariView = false
@@ -432,21 +436,69 @@ final class DepositBuyViewModel: ObservableObject {
         onMetaService.reset()
     }
     
-    // MARK: - DEX Swap (USDC → PAXG) Methods
+    // MARK: - DEX Swap (Bi-directional: USDC ↔ PAXG) - Aligned with Web
     
+    /// Toggle swap direction (like web handleSwapTokens)
+    func handleSwapTokens() {
+        let tempFrom = fromToken
+        fromToken = toToken
+        toToken = tempFrom
+        swapAmount = ""  // Clear amount when switching
+        usdcAmount = ""  // Clear legacy field too
+        swapQuote = nil
+        swapState = .idle
+        
+        AppLogger.log("🔄 Swap direction changed: \(fromToken.symbol) → \(toToken.symbol)", category: "depositbuy")
+    }
+    
+    /// Get current balance for from token (like web currentBalance)
+    var currentFromBalance: Decimal {
+        fromToken.symbol == "USDC" ? usdcBalance : paxgBalance
+    }
+    
+    /// Get current balance for to token
+    var currentToBalance: Decimal {
+        toToken.symbol == "USDC" ? usdcBalance : paxgBalance
+    }
+    
+    /// Formatted from balance for display
+    var formattedFromBalance: String {
+        let balance = currentFromBalance
+        let decimals = fromToken.symbol == "PAXG" ? 6 : 2
+        return CurrencyFormatter.formatDecimal(balance, maxDecimals: decimals)
+    }
+    
+    /// Estimated output amount from quote
+    var estimatedOutput: String {
+        guard let quote = swapQuote else {
+            return "0.00"
+        }
+        let decimals = toToken.symbol == "PAXG" ? 6 : 2
+        return CurrencyFormatter.formatDecimal(quote.toAmount, maxDecimals: decimals)
+    }
+    
+    /// Exchange rate from quote (like web exchangeRate)
+    var exchangeRate: Decimal? {
+        swapQuote?.exchangeRate
+    }
+    
+    /// Get swap quote (bi-directional support)
     func getSwapQuote() async {
         guard let walletAddress = walletAddress else {
             showError("Wallet address not available")
             return
         }
         
-        guard let amount = Decimal(string: usdcAmount), amount > 0 else {
-            showError("Please enter a valid USDC amount")
+        // Use swapAmount if set, otherwise fall back to legacy usdcAmount
+        let amountString = !swapAmount.isEmpty ? swapAmount : usdcAmount
+        guard let amount = Decimal(string: amountString), amount > 0 else {
+            showError("Please enter a valid \(fromToken.symbol) amount")
             return
         }
         
-        guard amount <= usdcBalance else {
-            showError("Insufficient USDC balance")
+        // Check balance for FROM token
+        guard amount <= currentFromBalance else {
+            showError("Insufficient \(fromToken.symbol) balance")
             return
         }
         
@@ -454,8 +506,8 @@ final class DepositBuyViewModel: ObservableObject {
         
         do {
             let params = DEXSwapService.SwapParams(
-                fromToken: .usdc,
-                toToken: .paxg,
+                fromToken: fromToken,
+                toToken: toToken,
                 amount: amount,
                 slippageTolerance: slippageTolerance,
                 fromAddress: walletAddress
@@ -464,9 +516,9 @@ final class DepositBuyViewModel: ObservableObject {
             let quote = try await dexSwapService.getQuote(params: params)
             swapQuote = quote
             
-            // Check if approval is needed
+            // Check if approval is needed for FROM token
             let approvalState = try await dexSwapService.checkApproval(
-                tokenAddress: DEXSwapService.Token.usdc.address,
+                tokenAddress: fromToken.address,
                 ownerAddress: walletAddress,
                 spenderAddress: ContractAddresses.zeroExExchangeProxy,
                 amount: amount
@@ -477,6 +529,7 @@ final class DepositBuyViewModel: ObservableObject {
             }
             
             AppLogger.log("✅ Swap quote: \(quote.displayFromAmount) → \(quote.displayToAmount)", category: "depositbuy")
+            AppLogger.log("   Exchange Rate: \(quote.displayExchangeRate)", category: "depositbuy")
         } catch {
             swapState = .error(error.localizedDescription)
             showError(error.localizedDescription)
@@ -484,13 +537,15 @@ final class DepositBuyViewModel: ObservableObject {
         }
     }
     
-    func approveUSDC() async {
+    /// Approve token for swap (supports both USDC and PAXG)
+    func approveToken() async {
         guard let walletAddress = walletAddress else {
             showError("Wallet address not available")
             return
         }
         
-        guard let amount = Decimal(string: usdcAmount) else {
+        let amountString = !swapAmount.isEmpty ? swapAmount : usdcAmount
+        guard let amount = Decimal(string: amountString) else {
             showError("Invalid amount")
             return
         }
@@ -499,13 +554,13 @@ final class DepositBuyViewModel: ObservableObject {
         
         do {
             try await dexSwapService.approveToken(
-                tokenAddress: DEXSwapService.Token.usdc.address,
+                tokenAddress: fromToken.address,
                 spenderAddress: ContractAddresses.zeroExExchangeProxy,
                 amount: amount
             )
-            AppLogger.log("✅ USDC approved for swap", category: "depositbuy")
+            AppLogger.log("✅ \(fromToken.symbol) approved for swap", category: "depositbuy")
             
-            // Proceed to swap automatically
+            // Proceed to swap automatically (like web)
             await executeSwap()
         } catch {
             swapState = .error(error.localizedDescription)
@@ -514,13 +569,20 @@ final class DepositBuyViewModel: ObservableObject {
         }
     }
     
+    /// Legacy method for backward compatibility
+    func approveUSDC() async {
+        await approveToken()
+    }
+    
+    /// Execute swap (bi-directional support)
     func executeSwap() async {
         guard let walletAddress = walletAddress else {
             showError("Wallet address not available")
             return
         }
         
-        guard let amount = Decimal(string: usdcAmount) else {
+        let amountString = !swapAmount.isEmpty ? swapAmount : usdcAmount
+        guard let amount = Decimal(string: amountString) else {
             showError("Invalid amount")
             return
         }
@@ -529,14 +591,15 @@ final class DepositBuyViewModel: ObservableObject {
         
         do {
             let params = DEXSwapService.SwapParams(
-                fromToken: .usdc,
-                toToken: .paxg,
+                fromToken: fromToken,
+                toToken: toToken,
                 amount: amount,
                 slippageTolerance: slippageTolerance,
                 fromAddress: walletAddress
             )
             
             let txHash = try await dexSwapService.executeSwap(params: params)
+            lastSwapTxHash = txHash
             swapState = .success(txHash)
             
             AppLogger.log("✅ Swap executed: \(txHash)", category: "depositbuy")
@@ -562,11 +625,40 @@ final class DepositBuyViewModel: ObservableObject {
         }
     }
     
+    /// Reset swap flow (aligned with web resetSwap)
     func resetSwapFlow() {
+        swapAmount = ""
         usdcAmount = ""
         swapQuote = nil
         swapState = .idle
+        lastSwapTxHash = nil
         dexSwapService.reset()
+    }
+    
+    /// Validate decimal input (like web isValidDecimalInput)
+    func isValidSwapInput(_ input: String) -> Bool {
+        if input.isEmpty { return true }
+        
+        // Allow digits and one decimal point
+        let pattern = "^[0-9]*\\.?[0-9]*$"
+        let regex = try? NSRegularExpression(pattern: pattern)
+        let range = NSRange(input.startIndex..., in: input)
+        return regex?.firstMatch(in: input, range: range) != nil
+    }
+    
+    /// Set swap amount from percentage (like web quick selectors)
+    func setSwapAmountPercent(_ percent: Int) {
+        let balance = currentFromBalance
+        guard balance > 0 else { return }
+        
+        let amount = balance * Decimal(percent) / 100
+        let decimals = fromToken.symbol == "PAXG" ? 6 : 2
+        swapAmount = CurrencyFormatter.formatDecimal(amount, maxDecimals: decimals)
+        
+        // Also update legacy field for backward compatibility
+        if fromToken.symbol == "USDC" {
+            usdcAmount = swapAmount
+        }
     }
     
     // MARK: - Balance & Price Methods

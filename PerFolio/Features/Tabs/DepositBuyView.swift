@@ -615,15 +615,15 @@ struct DepositBuyView: View {
         }
     }
     
-    // MARK: - Swap Module (USDC → PAXG)
+    // MARK: - Swap Module (Bi-directional: USDC ↔ PAXG) - Aligned with Web
     
     private var goldPurchaseCard: some View {
         PerFolioCard {
             VStack(alignment: .leading, spacing: 16) {
                 PerFolioSectionHeader(
                     icon: "arrow.2.squarepath",
-                    title: "Swap USDC to PAXG",
-                    subtitle: "Convert your stablecoins to tokenized gold"
+                    title: "Convert",
+                    subtitle: "Instantly swap between USDC and gold-backed PAXG"
                 )
                 
                 Divider()
@@ -634,12 +634,14 @@ struct DepositBuyView: View {
                     balanceItem(
                         symbol: "USDC",
                         balance: viewModel.formattedUSDCBalance,
-                        valueInCurrency: viewModel.formatCurrency(viewModel.usdcValueInUserCurrency)
+                        valueInCurrency: viewModel.formatCurrency(viewModel.usdcValueInUserCurrency),
+                        isFromToken: viewModel.fromToken.symbol == "USDC"
                     )
                     balanceItem(
                         symbol: "PAXG",
                         balance: viewModel.formattedPAXGBalance,
-                        valueInCurrency: viewModel.formatCurrency(viewModel.paxgValueInUserCurrency)
+                        valueInCurrency: viewModel.formatCurrency(viewModel.paxgValueInUserCurrency),
+                        isFromToken: viewModel.fromToken.symbol == "PAXG"
                     )
                 }
                 
@@ -659,59 +661,120 @@ struct DepositBuyView: View {
                 .background(themeManager.perfolioTheme.primaryBackground.opacity(0.5))
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 
-                // USDC amount input
+                // From token input (bi-directional)
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("USDC Amount")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    HStack {
+                        Text("From")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        Spacer()
+                        Text("Available: \(viewModel.formattedFromBalance) \(viewModel.fromToken.symbol)")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textTertiary)
+                    }
                     
-                    TextField("0.00", text: $viewModel.usdcAmount)
-                        .keyboardType(.decimalPad)
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                        .padding(14)
-                        .background(themeManager.perfolioTheme.primaryBackground)
+                    HStack(spacing: 12) {
+                        TextField("0.00", text: $viewModel.swapAmount)
+                            .keyboardType(.decimalPad)
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                            .onChange(of: viewModel.swapAmount) { newValue in
+                                // Also update legacy usdcAmount for compatibility
+                                if viewModel.fromToken.symbol == "USDC" {
+                                    viewModel.usdcAmount = newValue
+                                }
+                            }
+                        
+                        // Token badge
+                        HStack(spacing: 6) {
+                            Text(viewModel.fromToken.symbol)
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(themeManager.perfolioTheme.tintColor.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                    .padding(14)
+                    .background(themeManager.perfolioTheme.primaryBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     
-                    // Quick presets
+                    // Quick presets (like web)
                     HStack(spacing: 8) {
-                        ForEach(["25%", "50%", "75%", "Max"], id: \.self) { preset in
-                            PerFolioPresetButton(preset, isSelected: false) {
-                                setUSDCPreset(preset)
+                        ForEach([25, 50, 75, 100], id: \.self) { percent in
+                            PerFolioPresetButton(percent == 100 ? "MAX" : "\(percent)%", isSelected: false) {
+                                viewModel.setSwapAmountPercent(percent)
                             }
                         }
                     }
                 }
                 
-                // Estimated PAXG output
-                if !viewModel.usdcAmount.isEmpty, viewModel.goldPrice > 0 {
-                    VStack(spacing: 6) {
-                        HStack {
-                            Text("You will receive")
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                            Spacer()
-                            Text("~\(viewModel.estimatedPAXGAmount) PAXG")
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                // Swap direction toggle (like web)
+                HStack {
+                    Spacer()
+                    Button {
+                        HapticManager.shared.light()
+                        viewModel.handleSwapTokens()
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                            .frame(width: 40, height: 40)
+                            .background(themeManager.perfolioTheme.tintColor.opacity(0.1))
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .strokeBorder(themeManager.perfolioTheme.tintColor.opacity(0.3), lineWidth: 2)
+                            )
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, -4)
+                
+                // To token output (estimated)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("To (estimated)")
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                    
+                    HStack(spacing: 12) {
+                        Text(viewModel.swapQuote != nil ? viewModel.estimatedOutput : "0.00")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textPrimary)
+                        
+                        Spacer()
+                        
+                        // Token badge
+                        HStack(spacing: 6) {
+                            Text(viewModel.toToken.symbol)
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
                                 .foregroundStyle(themeManager.perfolioTheme.tintColor)
                         }
-                        
-                        // Show value in user's currency
-                        if viewModel.estimatedPAXGInUserCurrency > 0 {
-                            HStack {
-                                Text("Value in \(viewModel.userCurrency)")
-                                    .font(.system(size: 12, weight: .regular, design: .rounded))
-                                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
-                                Spacer()
-                                Text("≈ \(viewModel.formatCurrency(viewModel.estimatedPAXGInUserCurrency))")
-                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(themeManager.perfolioTheme.textPrimary)
-                            }
-                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(themeManager.perfolioTheme.tintColor.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+                    .padding(14)
+                    .background(themeManager.perfolioTheme.primaryBackground.opacity(0.5))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                
+                // Quote details (like web)
+                if let quote = viewModel.swapQuote, !viewModel.swapAmount.isEmpty {
+                    VStack(spacing: 10) {
+                        quoteDetailRow(label: "Exchange Rate", value: quote.displayExchangeRate)
+                        quoteDetailRow(label: "You'll receive", value: "\(viewModel.estimatedOutput) \(viewModel.toToken.symbol)")
+                        quoteDetailRow(label: "Price Impact", value: quote.displayPriceImpact, isWarning: quote.isPriceImpactHigh)
                     }
                     .padding(12)
-                    .background(themeManager.perfolioTheme.goldenBoxGradient.opacity(0.1))
+                    .background(themeManager.perfolioTheme.primaryBackground.opacity(0.3))
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(themeManager.perfolioTheme.tintColor.opacity(0.3), lineWidth: 1)
+                    )
                 }
                 
                 // Swap button with state
@@ -720,7 +783,7 @@ struct DepositBuyView: View {
                 // Info banner with provider branding
                 VStack(spacing: 8) {
                     PerFolioInfoBanner(
-                        "Swaps are instant and backed 1:1 by physical gold"
+                        "Instant conversion via 0x Protocol"
                     )
                     
                     // Powered by branding
@@ -738,11 +801,31 @@ struct DepositBuyView: View {
         }
     }
     
-    private func balanceItem(symbol: String, balance: String, valueInCurrency: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(symbol)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+    /// Quote detail row (aligned with web)
+    private func quoteDetailRow(label: String, value: String, isWarning: Bool = false) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+            Spacer()
+            Text(value)
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(isWarning ? themeManager.perfolioTheme.danger : themeManager.perfolioTheme.textPrimary)
+        }
+    }
+    
+    private func balanceItem(symbol: String, balance: String, valueInCurrency: String? = nil, isFromToken: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(symbol)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                if isFromToken {
+                    Text("(From)")
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                }
+            }
             Text(balance)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(themeManager.perfolioTheme.textPrimary)
@@ -756,8 +839,16 @@ struct DepositBuyView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(themeManager.perfolioTheme.primaryBackground.opacity(0.5))
+        .background(
+            isFromToken
+                ? themeManager.perfolioTheme.tintColor.opacity(0.1)
+                : themeManager.perfolioTheme.primaryBackground.opacity(0.5)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(isFromToken ? themeManager.perfolioTheme.tintColor.opacity(0.3) : Color.clear, lineWidth: 1)
+        )
     }
     
     private var swapButton: some View {
@@ -770,29 +861,39 @@ struct DepositBuyView: View {
                     }
                 }
             case .needsApproval:
-                PerFolioButton("APPROVE USDC") {
+                // Dynamic token approval (bi-directional)
+                PerFolioButton("APPROVE \(viewModel.fromToken.symbol)") {
                     Task {
-                        await viewModel.approveUSDC()
+                        await viewModel.approveToken()
                     }
                 }
             case .approving:
-                PerFolioButton("APPROVING...", isDisabled: true) {
+                PerFolioButton("APPROVING \(viewModel.fromToken.symbol)...", isDisabled: true) {
                     // No action
                 }
             case .swapping:
-                PerFolioButton("SWAPPING...", isDisabled: true) {
+                PerFolioButton("CONVERTING...", isDisabled: true) {
                     // No action
                 }
             case .success(let txHash):
-                VStack(spacing: 12) {
-                    HStack {
+                // Success state (aligned with web)
+                VStack(spacing: 16) {
+                    // Success icon and message
+                    VStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 48))
                             .foregroundStyle(themeManager.perfolioTheme.success)
                         Text("Swap Successful!")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
                             .foregroundStyle(themeManager.perfolioTheme.success)
+                        Text("Your \(viewModel.fromToken.symbol) has been converted to \(viewModel.toToken.symbol)")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                            .multilineTextAlignment(.center)
                     }
+                    .padding(.vertical, 8)
                     
+                    // Etherscan link
                     Button {
                         HapticManager.shared.light()
                         if let url = URL(string: "https://etherscan.io/tx/\(txHash)") {
@@ -800,22 +901,38 @@ struct DepositBuyView: View {
                         }
                     } label: {
                         HStack {
+                            Image(systemName: "safari")
                             Text("View on Etherscan")
                                 .font(.system(size: 14, weight: .medium, design: .rounded))
                             Image(systemName: "arrow.up.right.square")
                         }
                         .foregroundStyle(themeManager.perfolioTheme.tintColor)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(themeManager.perfolioTheme.tintColor.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     }
                     
-                    PerFolioButton("SWAP MORE") {
+                    // Swap again button
+                    PerFolioButton("SWAP AGAIN") {
                         viewModel.resetSwapFlow()
                     }
                 }
+                .padding(.vertical, 8)
             case .error(let message):
                 VStack(spacing: 12) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(themeManager.perfolioTheme.danger)
+                        Text("Swap Failed")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(themeManager.perfolioTheme.danger)
+                    }
+                    
                     Text(message)
                         .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(themeManager.perfolioTheme.danger)
+                        .foregroundStyle(themeManager.perfolioTheme.textSecondary)
+                        .multilineTextAlignment(.center)
                     
                     PerFolioButton("TRY AGAIN") {
                         viewModel.resetSwapFlow()
@@ -825,24 +942,20 @@ struct DepositBuyView: View {
         }
     }
     
+    /// Legacy function - now delegates to viewModel
     private func setUSDCPreset(_ preset: String) {
-        guard viewModel.usdcBalance > 0 else { return }
-        
-        let amount: Decimal
         switch preset {
         case "25%":
-            amount = viewModel.usdcBalance * 0.25
+            viewModel.setSwapAmountPercent(25)
         case "50%":
-            amount = viewModel.usdcBalance * 0.50
+            viewModel.setSwapAmountPercent(50)
         case "75%":
-            amount = viewModel.usdcBalance * 0.75
-        case "Max":
-            amount = viewModel.usdcBalance
+            viewModel.setSwapAmountPercent(75)
+        case "Max", "MAX":
+            viewModel.setSwapAmountPercent(100)
         default:
             return
         }
-        
-        viewModel.usdcAmount = String(format: "%.2f", NSDecimalNumber(decimal: amount).doubleValue)
     }
     
     // MARK: - How It Works
